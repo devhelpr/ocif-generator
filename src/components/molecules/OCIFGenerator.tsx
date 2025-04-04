@@ -3,6 +3,7 @@ import Ajv2020 from "ajv/dist/2020"
 import { IconButton } from '../atoms/IconButton';
 import { OCIFSchema } from '../../types/schema';
 import { generateOCIFFromPrompt } from '../../services/openai';
+import { applyD3ForceLayout } from '../../services/d3Layout';
 
 // Import the schema
 import schemaJson from '../../../schema.json';
@@ -50,15 +51,18 @@ export function OCIFGenerator() {
         return;
       }
 
+      // Apply d3-force layout to the nodes
+      const layoutedResponse = applyD3ForceLayout(parsedResponse);
+
       // Validate against the schema
-      const valid = validate(parsedResponse);
+      const valid = validate(layoutedResponse);
       setIsValid(valid);
       
       if (!valid) {
         setError(`Validation failed: ${ajv.errorsText(validate.errors)}`);
       }
 
-      setGeneratedOCIF(JSON.stringify(parsedResponse, null, 2));
+      setGeneratedOCIF(JSON.stringify(layoutedResponse, null, 2));
     } catch (err) {
       setError('An error occurred while generating the OCIF file.');
       console.error(err);
@@ -89,11 +93,14 @@ export function OCIFGenerator() {
         <label htmlFor="prompt" className="block text-sm font-medium text-zinc-700 mb-2">
           Enter your prompt to generate an OCIF file
         </label>
+        <p className="text-sm text-zinc-500 mb-2">
+          Describe the components and their relationships. The layout will be automatically generated using d3-force.
+        </p>
         <textarea
           id="prompt"
           rows={4}
           className="w-full rounded-lg border-zinc-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          placeholder="Describe the OCIF file you want to generate..."
+          placeholder="Example: Create a web app with a login form connected to a user dashboard, which has a sidebar navigation and a main content area..."
           value={prompt}
           onChange={handlePromptChange}
         />

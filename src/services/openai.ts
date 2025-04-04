@@ -39,7 +39,22 @@ Important rules:
 2. Include all required fields from the schema.
 3. Generate realistic and useful data based on the user's prompt.
 4. Do not include any explanations or markdown formatting in your response, only the JSON.
-5. Ensure all IDs are unique and properly referenced.`;
+5. Ensure all IDs are unique and properly referenced.
+6. For relations between nodes:
+   - Add a 'source' and 'target' field to each relation to specify connected nodes
+   - Use node IDs to reference the connected nodes
+   - Create meaningful connections based on the component relationships
+   - Include at least one relation for each node to ensure proper layout
+   - Create a logical hierarchy of components with parent-child relationships
+7. For node positions:
+   - You can optionally specify initial positions using the 'position' field
+   - If not specified, positions will be automatically calculated using d3-force
+   - Positions should be specified as [x, y] coordinates
+8. For node sizes:
+   - Specify realistic sizes for components using the 'size' field
+   - Sizes should be specified as [width, height]
+   - Use appropriate sizes based on the component type
+   - Larger components should have larger sizes (e.g., main containers: [300, 200], buttons: [100, 40])`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -77,7 +92,7 @@ Important rules:
     try {
       JSON.parse(content);
       return content;
-    } catch (e) {
+    } catch {
       throw new Error('The response from OpenAI is not valid JSON');
     }
   } catch (error) {
