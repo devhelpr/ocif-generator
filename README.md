@@ -2,6 +2,15 @@
 
 A simple tool to generate OCIF files.
 
+## installation
+
+add a .env file with the following:
+
+VITE_OPENAI_API_KEY==your_openai_api_key
+
+npm install
+npm run dev
+
 
 ## test
 
