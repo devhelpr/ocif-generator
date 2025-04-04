@@ -54,7 +54,30 @@ Important rules:
    - Specify realistic sizes for components using the 'size' field
    - Sizes should be specified as [width, height]
    - Use appropriate sizes based on the component type
-   - Larger components should have larger sizes (e.g., main containers: [300, 200], buttons: [100, 40])`;
+   - Larger components should have larger sizes (e.g., main containers: [300, 200], buttons: [100, 40])
+9. For connections between nodes:
+   - When the prompt describes connections or relationships between components, create arrow nodes to visualize these connections
+   - For each connection, create:
+     a) An arrow node with type "@ocif/node/arrow" in the nodes array
+     b) A relation with type "@ocif/rel/edge" in the relations array that references the arrow node
+   - The arrow node should have:
+     - A unique ID (e.g., "arrow-1", "arrow-2")
+     - A data array with a single object containing:
+       - type: "@ocif/node/arrow"
+       - strokeColor: A color for the arrow (e.g., "#000000")
+       - start: The starting point [x, y] (will be updated by the layout algorithm)
+       - end: The ending point [x, y] (will be updated by the layout algorithm)
+       - startMarker: "none"
+       - endMarker: "arrowhead"
+       - relation: The ID of the corresponding relation
+   - The relation should have:
+     - A unique ID (e.g., "relation-1", "relation-2")
+     - A data array with a single object containing:
+       - type: "@ocif/rel/edge"
+       - start: The ID of the source node
+       - end: The ID of the target node
+       - rel: A semantic relationship URI (e.g., "https://www.wikidata.org/wiki/Property:P1376")
+       - node: The ID of the arrow node`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

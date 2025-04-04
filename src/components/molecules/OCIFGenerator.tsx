@@ -95,6 +95,7 @@ export function OCIFGenerator() {
         </label>
         <p className="text-sm text-zinc-500 mb-2">
           Describe the components and their relationships. The layout will be automatically generated using d3-force.
+          When you describe connections between components, arrows will be automatically created to visualize these relationships.
         </p>
         <textarea
           id="prompt"

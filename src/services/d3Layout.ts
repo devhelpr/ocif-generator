@@ -1,25 +1,40 @@
 import * as d3 from 'd3-force';
 
+interface NodeData {
+  type: string;
+  [key: string]: unknown;
+}
+
 interface Node {
   id: string;
   position?: number[];
   size?: number[];
-  [key: string]: any;
+  data?: NodeData[];
+  [key: string]: unknown;
+}
+
+interface RelationData {
+  type: string;
+  node?: string;
+  start?: string;
+  end?: string;
+  [key: string]: unknown;
 }
 
 interface Relation {
   id: string;
   source?: string;
   target?: string;
-  [key: string]: any;
+  data?: RelationData[];
+  [key: string]: unknown;
 }
 
 interface OCIFData {
   ocif: string;
   nodes: Node[];
   relations: Relation[];
-  resources: any[];
-  schemas: any[];
+  resources: unknown[];
+  schemas: unknown[];
 }
 
 interface D3Node extends d3.SimulationNodeDatum {
@@ -27,6 +42,7 @@ interface D3Node extends d3.SimulationNodeDatum {
   x: number;
   y: number;
   size?: number[];
+  isArrow?: boolean;
   originalData: Node;
 }
 
@@ -51,8 +67,16 @@ export function applyD3ForceLayout(ocifData: OCIFData): OCIFData {
   const height = 800;
   const padding = 50;
 
+  // Identify arrow relations
+  const arrowRelations = relations.filter(relation => 
+    relation.data?.some(data => data.type === '@ocif/rel/edge' && data.node)
+  );
+
   // Create d3 nodes and links
   const d3Nodes: D3Node[] = nodes.map(node => {
+    // Check if this is an arrow node
+    const isArrow = node.data?.some(data => data.type === '@ocif/node/arrow');
+    
     // Initialize position if not set
     const position = node.position || [
       padding + Math.random() * (width - 2 * padding),
@@ -64,12 +88,18 @@ export function applyD3ForceLayout(ocifData: OCIFData): OCIFData {
       x: position[0],
       y: position[1],
       size: node.size || [100, 100],
+      isArrow,
       originalData: node
     };
   });
 
-  const d3Links: D3Link[] = relations
-    .filter(relation => relation.source && relation.target)
+  // Create links for regular relations
+  const regularLinks: D3Link[] = relations
+    .filter(relation => 
+      relation.source && 
+      relation.target && 
+      !relation.data?.some(data => data.type === '@ocif/rel/edge' && data.node)
+    )
     .map(relation => {
       const source = d3Nodes.find(n => n.id === relation.source);
       const target = d3Nodes.find(n => n.id === relation.target);
@@ -87,15 +117,15 @@ export function applyD3ForceLayout(ocifData: OCIFData): OCIFData {
 
   // Create the simulation
   const simulation = d3.forceSimulation<D3Node>(d3Nodes)
-    .force('link', d3.forceLink<D3Node, D3Link>(d3Links)
+    .force('link', d3.forceLink<D3Node, D3Link>(regularLinks)
       .id(d => d.id)
       .distance(150) // Distance between connected nodes
     )
-    .force('charge', d3.forceManyBody()
-      .strength(-300) // Repulsion strength
+    .force('charge', d3.forceManyBody<D3Node>()
+      .strength(d => d.isArrow ? 0 : -300) // No repulsion for arrow nodes
     )
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide()
+    .force('collision', d3.forceCollide<D3Node>()
       .radius(d => Math.max(d.size?.[0] || 50, d.size?.[1] || 50) / 2 + 10)
       .strength(0.8)
     )
@@ -114,6 +144,37 @@ export function applyD3ForceLayout(ocifData: OCIFData): OCIFData {
   d3Nodes.forEach(d3Node => {
     const originalNode = d3Node.originalData;
     originalNode.position = [d3Node.x, d3Node.y];
+  });
+
+  // Position arrow nodes between their connected nodes
+  arrowRelations.forEach(relation => {
+    const arrowNodeId = relation.data?.find(data => data.type === '@ocif/rel/edge')?.node;
+    if (!arrowNodeId) return;
+    
+    const sourceId = relation.data?.find(data => data.type === '@ocif/rel/edge')?.start;
+    const targetId = relation.data?.find(data => data.type === '@ocif/rel/edge')?.end;
+    
+    if (!sourceId || !targetId) return;
+    
+    const arrowNode = nodes.find(node => node.id === arrowNodeId);
+    const sourceNode = nodes.find(node => node.id === sourceId);
+    const targetNode = nodes.find(node => node.id === targetId);
+    
+    if (!arrowNode || !sourceNode || !targetNode || !sourceNode.position || !targetNode.position) return;
+    
+    // Calculate midpoint between source and target
+    const midX = (sourceNode.position[0] + targetNode.position[0]) / 2;
+    const midY = (sourceNode.position[1] + targetNode.position[1]) / 2;
+    
+    // Update arrow node position
+    arrowNode.position = [midX, midY];
+    
+    // Update arrow start and end points
+    const arrowData = arrowNode.data?.find(data => data.type === '@ocif/node/arrow');
+    if (arrowData) {
+      arrowData.start = [sourceNode.position[0], sourceNode.position[1]];
+      arrowData.end = [targetNode.position[0], targetNode.position[1]];
+    }
   });
 
   // Normalize positions to ensure all nodes are visible
@@ -135,6 +196,30 @@ export function applyD3ForceLayout(ocifData: OCIFData): OCIFData {
     if (node.position) {
       node.position[0] = padding + (node.position[0] - minX) * scale;
       node.position[1] = padding + (node.position[1] - minY) * scale;
+    }
+  });
+
+  // Update arrow start and end points after normalization
+  arrowRelations.forEach(relation => {
+    const arrowNodeId = relation.data?.find(data => data.type === '@ocif/rel/edge')?.node;
+    if (!arrowNodeId) return;
+    
+    const sourceId = relation.data?.find(data => data.type === '@ocif/rel/edge')?.start;
+    const targetId = relation.data?.find(data => data.type === '@ocif/rel/edge')?.end;
+    
+    if (!sourceId || !targetId) return;
+    
+    const arrowNode = nodes.find(node => node.id === arrowNodeId);
+    const sourceNode = nodes.find(node => node.id === sourceId);
+    const targetNode = nodes.find(node => node.id === targetId);
+    
+    if (!arrowNode || !sourceNode || !targetNode || !sourceNode.position || !targetNode.position) return;
+    
+    // Update arrow start and end points
+    const arrowData = arrowNode.data?.find(data => data.type === '@ocif/node/arrow');
+    if (arrowData) {
+      arrowData.start = [sourceNode.position[0], sourceNode.position[1]];
+      arrowData.end = [targetNode.position[0], targetNode.position[1]];
     }
   });
 
