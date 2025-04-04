@@ -55,6 +55,7 @@ Important rules:
    - Sizes should be specified as [width, height]
    - Use appropriate sizes based on the component type
    - Larger components should have larger sizes (e.g., main containers: [300, 200], buttons: [100, 40])
+   - Make sure to leave enough space between nodes for arrows (use smaller sizes)
 9. For connections between nodes:
    - When the prompt describes connections or relationships between components, create arrow nodes to visualize these connections
    - For each connection, create:
@@ -77,7 +78,29 @@ Important rules:
        - start: The ID of the source node
        - end: The ID of the target node
        - rel: A semantic relationship URI (e.g., "https://www.wikidata.org/wiki/Property:P1376")
-       - node: The ID of the arrow node`;
+       - node: The ID of the arrow node
+10. For node titles and labels:
+    - Create a resource for each node with a text/plain representation
+    - The resource should have:
+      - A unique ID (e.g., "node1-res", "node2-res")
+      - A representations array with at least one object containing:
+        - mime-type: "text/plain"
+        - content: A descriptive title for the node based on its purpose
+    - Reference this resource in the node's "resource" field
+    - Example:
+      {
+        "id": "node1",
+        "position": [100, 100],
+        "size": [80, 40],
+        "resource": "node1-res",
+        "data": [...]
+      },
+      {
+        "id": "node1-res",
+        "representations": [
+          { "mime-type": "text/plain", "content": "Login Form" }
+        ]
+      }`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -83,11 +83,14 @@ export function applyD3ForceLayout(ocifData: OCIFData): OCIFData {
       padding + Math.random() * (height - 2 * padding)
     ];
     
+    // Use smaller default sizes for non-arrow nodes
+    const defaultSize = isArrow ? [0, 0] : [80, 40];
+    
     return {
       id: node.id,
       x: position[0],
       y: position[1],
-      size: node.size || [100, 100],
+      size: node.size || defaultSize,
       isArrow,
       originalData: node
     };
@@ -119,14 +122,14 @@ export function applyD3ForceLayout(ocifData: OCIFData): OCIFData {
   const simulation = d3.forceSimulation<D3Node>(d3Nodes)
     .force('link', d3.forceLink<D3Node, D3Link>(regularLinks)
       .id(d => d.id)
-      .distance(150) // Distance between connected nodes
+      .distance(200) // Increased distance between connected nodes to make room for arrows
     )
     .force('charge', d3.forceManyBody<D3Node>()
-      .strength(d => d.isArrow ? 0 : -300) // No repulsion for arrow nodes
+      .strength(d => d.isArrow ? 0 : -500) // Increased repulsion for non-arrow nodes
     )
     .force('center', d3.forceCenter(width / 2, height / 2))
     .force('collision', d3.forceCollide<D3Node>()
-      .radius(d => Math.max(d.size?.[0] || 50, d.size?.[1] || 50) / 2 + 10)
+      .radius(d => Math.max(d.size?.[0] || 50, d.size?.[1] || 50) / 2 + 20) // Increased collision radius
       .strength(0.8)
     )
     .force('x', d3.forceX(width / 2).strength(0.05))
