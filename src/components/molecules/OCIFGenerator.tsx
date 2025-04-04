@@ -96,13 +96,13 @@ export function OCIFGenerator() {
         <p className="text-sm text-zinc-500 mb-2">
           Describe the components and their relationships. The layout will be automatically generated using d3-force.
           When you describe connections between components, arrows will be automatically created to visualize these relationships.
-          Each node will have a descriptive title based on your prompt.
+          Each node will have a descriptive title based on your prompt. You can specify shapes (rectangles or ovals) and colors in your prompt.
         </p>
         <textarea
           id="prompt"
           rows={4}
           className="w-full rounded-lg border-zinc-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          placeholder="Example: Create a diagram showing Berlin as the capital of Germany, with an arrow connecting them. Include descriptive titles for each node."
+          placeholder="Example: Create a diagram showing Berlin (green rectangle) as the capital of Germany (red oval), with an arrow connecting them. Include descriptive titles for each node."
           value={prompt}
           onChange={handlePromptChange}
         />

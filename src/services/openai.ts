@@ -100,7 +100,27 @@ Important rules:
         "representations": [
           { "mime-type": "text/plain", "content": "Login Form" }
         ]
-      }`;
+      }
+11. For node shapes:
+    - Every node that represents a shape (not an arrow) MUST have a "data" property with an array containing at least one object
+    - The first object in the data array MUST have a "type" property that specifies the shape type
+    - For rectangular shapes, use:
+      {
+        "type": "@ocif/node/rect",
+        "strokeWidth": 3,
+        "strokeColor": "#000000",
+        "fillColor": "#00FF00"
+      }
+    - For oval/circular shapes, use:
+      {
+        "type": "@ocif/node/oval",
+        "strokeWidth": 5,
+        "strokeColor": "#FF0000",
+        "fillColor": "#FFFFFF"
+      }
+    - If the prompt specifies colors or stroke widths, use those values instead of the defaults
+    - Choose the appropriate shape type based on the context (e.g., use oval for countries, cities, or organic shapes)
+12. IMPORTANT: The generated OCIF file MUST include the "ocif" property with the value "https://canvasprotocol.org/ocif/0.4" as the first property in the JSON object.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -136,7 +156,14 @@ Important rules:
 
     // Try to parse the content as JSON to ensure it's valid
     try {
-      JSON.parse(content);
+      const parsedJson = JSON.parse(content);
+      
+      // Ensure the ocif property is set correctly
+      if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
+        parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
+        return JSON.stringify(parsedJson, null, 2);
+      }
+      
       return content;
     } catch {
       throw new Error('The response from OpenAI is not valid JSON');
