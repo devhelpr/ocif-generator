@@ -13,8 +13,10 @@
     "d3-force": "^3.0.0",
     "json5": "^2.2.3",
     "marked": "^15.0.7",
+    "openai": "^4.91.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

@@ -1,5 +1,6 @@
 import { OCIFSchema } from '../types/schema';
-
+import {OCIFSchemaDefinition} from '../schemas/schema';
+import { zodResponseFormat } from "openai/helpers/zod";
 // Define the response type for the OpenAI API
 interface OpenAIResponse {
   choices: Array<{
@@ -123,50 +124,126 @@ Important rules:
 12. IMPORTANT: The generated OCIF file MUST include the "ocif" property with the value "https://canvasprotocol.org/ocif/0.4" as the first property in the JSON object.`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.2, // Lower temperature for more deterministic output
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
-    }
-
-    const data: OpenAIResponse = await response.json();
-    
-    // Extract the content from the response
-    const content = data.choices[0]?.message?.content;
-    
-    if (!content) {
-      throw new Error('No content returned from OpenAI API');
-    }
-
-    // Try to parse the content as JSON to ensure it's valid
+    // Use a try-catch block to handle potential response format validation errors
     try {
-      const parsedJson = JSON.parse(content);
-      
-      // Ensure the ocif property is set correctly
-      if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
-        parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
-        return JSON.stringify(parsedJson, null, 2);
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2, // Lower temperature for more deterministic output
+          response_format: zodResponseFormat(OCIFSchemaDefinition, "open_canvas_interchange_format")
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
       }
+
+      const data: OpenAIResponse = await response.json();
       
-      return content;
-    } catch {
-      throw new Error('The response from OpenAI is not valid JSON');
+      // Extract the content from the response
+      const content = data.choices[0]?.message?.content;
+      
+      if (!content) {
+        throw new Error('No content returned from OpenAI API');
+      }
+
+      // Try to parse the content as JSON to ensure it's valid
+      try {
+        const parsedJson = JSON.parse(content);
+        
+        // Ensure the ocif property is set correctly
+        if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
+          parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
+          return JSON.stringify(parsedJson, null, 2);
+        }
+        
+        return content;
+      } catch {
+        throw new Error('The response from OpenAI is not valid JSON');
+      }
+    } catch (formatError) {
+      // If there's an error with the response format validation, fall back to the standard approach
+      console.warn('Response format validation failed, falling back to standard approach:', formatError);
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2, // Lower temperature for more deterministic output
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data: OpenAIResponse = await response.json();
+      
+      // Extract the content from the response
+      const content = data.choices[0]?.message?.content;
+      
+      if (!content) {
+        throw new Error('No content returned from OpenAI API');
+      }
+
+      // Try to parse the content as JSON to ensure it's valid
+      try {
+        const parsedJson = JSON.parse(content);
+        
+        // Ensure the ocif property is set correctly
+        if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
+          parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
+        }
+        
+        // Ensure nodes have the correct data structure
+        if (parsedJson.nodes) {
+          parsedJson.nodes.forEach((node: { data?: Array<{ type?: string }> }) => {
+            if (node.data && Array.isArray(node.data)) {
+              node.data.forEach((dataItem: { type?: string }) => {
+                if (!dataItem.type) {
+                  dataItem.type = "@ocif/node/rect"; // Default type
+                }
+              });
+            }
+          });
+        }
+        
+        // Ensure relations have the correct data structure
+        if (parsedJson.relations) {
+          parsedJson.relations.forEach((relation: { data?: Array<{ type?: string }> }) => {
+            if (relation.data && Array.isArray(relation.data)) {
+              relation.data.forEach((dataItem: { type?: string }) => {
+                if (!dataItem.type) {
+                  dataItem.type = "@ocif/rel/edge"; // Default type
+                }
+              });
+            }
+          });
+        }
+        
+        return JSON.stringify(parsedJson, null, 2);
+      } catch {
+        throw new Error('The response from OpenAI is not valid JSON');
+      }
     }
   } catch (error) {
     console.error('Error calling OpenAI API:', error);
