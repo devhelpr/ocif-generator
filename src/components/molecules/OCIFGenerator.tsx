@@ -4,6 +4,18 @@ import { OCIFSchema } from '../../types/schema';
 import { generateOCIFFromPrompt } from '../../services/llm';
 import { applyD3ForceLayout } from '../../services/d3Layout';
 import { Settings } from './Settings';
+import { evaluateAndRerunIfNeeded } from '../../services/prompt-eval';
+import { getCurrentAPIConfig } from '../../services/llm-api';
+
+// Define the evaluation result type
+interface EvaluationResult {
+  matchesPrompt: boolean;
+  matchesSystemPrompt: boolean;
+  missingElements: string[];
+  suggestedHints: string[];
+  score: number;
+  reasoning: string;
+}
 
 // Import the schema
 import schemaJson from '../../../schema.json';
@@ -19,10 +31,13 @@ export function OCIFGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
     setError(null);
+    setEvaluation(null);
   };
 
   const handleGenerate = async () => {
@@ -33,6 +48,7 @@ export function OCIFGenerator() {
 
     setIsLoading(true);
     setError(null);
+    setEvaluation(null);
 
     try {
       // Call the LLM API to generate the OCIF file
@@ -65,6 +81,144 @@ export function OCIFGenerator() {
       console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEvaluateAndRerun = async () => {
+    if (!generatedOCIF) {
+      setError('Generate OCIF content first before evaluating');
+      return;
+    }
+
+    setIsEvaluating(true);
+    setError(null);
+
+    try {
+      // Create a system message - same as used for generation
+      const systemMessage = `You are an expert in generating Open Component Interconnect Format (OCIF) JSON files.
+Your task is to generate a valid OCIF JSON file based on the user's prompt.
+The JSON must strictly follow this schema:
+${JSON.stringify(schema, null, 2)}
+
+Important rules:
+1. The output must be valid JSON that conforms to the schema.
+2. Include all required fields from the schema.
+3. Generate realistic and useful data based on the user's prompt.
+4. Do not include any explanations or markdown formatting in your response, only the JSON.
+5. Ensure all IDs are unique and properly referenced.
+6. For relations between nodes:
+   - Add a 'source' and 'target' field to each relation to specify connected nodes
+   - Use node IDs to reference the connected nodes
+   - Create meaningful connections based on the component relationships
+   - Include at least one relation for each node to ensure proper layout
+   - Create a logical hierarchy of components with parent-child relationships
+7. For node positions:
+   - You can optionally specify initial positions using the 'position' field
+   - If not specified, positions will be automatically calculated using d3-force
+   - Positions should be specified as [x, y] coordinates
+8. For node sizes:
+   - Specify realistic sizes for components using the 'size' field
+   - Sizes should be specified as [width, height]
+   - Use appropriate sizes based on the component type
+   - Larger components should have larger sizes (e.g., main containers: [300, 200], buttons: [100, 40])
+   - Make sure to leave enough space between nodes for arrows (use smaller sizes)
+9. For connections between nodes:
+   - When the prompt describes connections or relationships between components, create arrow nodes to visualize these connections
+   - For each connection, create:
+     a) An arrow node with type "@ocif/node/arrow" in the nodes array
+     b) A relation with type "@ocif/rel/edge" in the relations array that references the arrow node
+   - The arrow node should have:
+     - A unique ID (e.g., "arrow-1", "arrow-2")
+     - A data array with a single object containing:
+       - type: "@ocif/node/arrow"
+       - strokeColor: A color for the arrow (e.g., "#000000")
+       - start: The starting point [x, y] (will be updated by the layout algorithm)
+       - end: The ending point [x, y] (will be updated by the layout algorithm)
+       - startMarker: "none"
+       - endMarker: "arrowhead"
+       - relation: The ID of the corresponding relation
+   - The relation should have:
+     - A unique ID (e.g., "relation-1", "relation-2")
+     - A data array with a single object containing:
+       - type: "@ocif/rel/edge"
+       - start: The ID of the source node
+       - end: The ID of the target node
+       - rel: A semantic relationship URI (e.g., "https://www.wikidata.org/wiki/Property:P1376")
+       - node: The ID of the arrow node
+10. For node titles and labels:
+    - Create a resource for each node with a text/plain representation
+    - The resource should have:
+      - A unique ID (e.g., "node1-res", "node2-res")
+      - A representations array with at least one object containing:
+        - mime-type: "text/plain"
+        - content: A descriptive title for the node based on its purpose
+    - Reference this resource in the node's "resource" field
+    - Example:
+      {
+        "id": "node1",
+        "position": [100, 100],
+        "size": [80, 40],
+        "resource": "node1-res",
+        "data": [...]
+      },
+      {
+        "id": "node1-res",
+        "representations": [
+          { "mime-type": "text/plain", "content": "Login Form" }
+        ]
+      }
+11. For node shapes:
+    - Every node that represents a shape (not an arrow) MUST have a "data" property with an array containing at least one object
+    - The first object in the data array MUST have a "type" property that specifies the shape type
+    - For rectangular shapes, use:
+      {
+        "type": "@ocif/node/rect",
+        "strokeWidth": 3,
+        "strokeColor": "#000000",
+        "fillColor": "#00FF00"
+      }
+    - For oval/circular shapes, use:
+      {
+        "type": "@ocif/node/oval",
+        "strokeWidth": 5,
+        "strokeColor": "#FF0000",
+        "fillColor": "#FFFFFF"
+      }
+    - If the prompt specifies colors or stroke widths, use those values instead of the defaults
+    - Choose the appropriate shape type based on the context (e.g., use oval for countries, cities, or organic shapes)
+12. IMPORTANT: The generated OCIF file MUST include the "ocif" property with the value "https://canvasprotocol.org/ocif/0.4" as the first property in the JSON object.`;
+
+      const apiConfig = getCurrentAPIConfig();
+      
+      // Evaluate the output and rerun if needed
+      const result = await evaluateAndRerunIfNeeded(
+        prompt,
+        systemMessage,
+        generatedOCIF,
+        apiConfig
+      );
+      
+      setEvaluation(result.evaluation);
+      
+      // If the prompt was rerun and improved output was generated
+      if (result.wasRerun && result.improvedOutput) {
+        try {
+          // Parse and validate the improved output
+          const improvedJson = JSON.parse(result.improvedOutput);
+          const layoutedImproved = applyD3ForceLayout(improvedJson);
+          
+          // Set the improved output
+          setGeneratedOCIF(JSON.stringify(layoutedImproved, null, 2));
+        } catch (parseError) {
+          console.error('Error parsing improved output:', parseError);
+          // Keep original output if parsing fails
+        }
+      }
+    } catch (err) {
+      setError('An error occurred during evaluation.');
+      console.error(err);
+    } finally {
+      setIsEvaluating(false);
     }
   };
 
@@ -113,7 +267,7 @@ export function OCIFGenerator() {
           value={prompt}
           onChange={handlePromptChange}
         />
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 flex justify-end space-x-2">
           <button
             type="button"
             onClick={handleGenerate}
@@ -122,6 +276,17 @@ export function OCIFGenerator() {
           >
             {isLoading ? 'Generating...' : 'Generate OCIF'}
           </button>
+          
+          {generatedOCIF && (
+            <button
+              type="button"
+              onClick={handleEvaluateAndRerun}
+              disabled={isEvaluating}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {isEvaluating ? 'Evaluating...' : 'Evaluate & Improve'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -138,6 +303,46 @@ export function OCIFGenerator() {
         </div>
       )}
 
+      {evaluation && (
+        <div className="rounded-md bg-blue-50 p-4">
+          <div className="flex">
+            <div className="ml-3 w-full">
+              <h3 className="text-sm font-medium text-blue-800">Evaluation Results</h3>
+              <div className="mt-2 text-sm text-blue-700 space-y-2">
+                <div className="flex justify-between">
+                  <span>Matches Prompt:</span>
+                  <span>{evaluation.matchesPrompt ? '✓' : '✗'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Matches System Prompt:</span>
+                  <span>{evaluation.matchesSystemPrompt ? '✓' : '✗'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Score:</span>
+                  <span>{evaluation.score}/10</span>
+                </div>
+                {evaluation.missingElements.length > 0 && (
+                  <div>
+                    <span className="font-medium">Missing Elements:</span>
+                    <ul className="list-disc pl-4 mt-1">
+                      {evaluation.missingElements.map((element: string, index: number) => (
+                        <li key={index}>{element}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {evaluation.reasoning && (
+                  <div>
+                    <span className="font-medium">Reasoning:</span>
+                    <p className="mt-1">{evaluation.reasoning}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {generatedOCIF && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">

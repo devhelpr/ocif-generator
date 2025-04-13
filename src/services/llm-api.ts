@@ -98,6 +98,17 @@ export async function callLLMAPI(
       throw new Error('The response from Gemini is not valid JSON');
     }
   } else {
+    // Format the response_format appropriately based on the API provider
+    let responseFormat = undefined;
+    
+    if (jsonSchema && apiConfig.name === 'OpenAI') {
+      // OpenAI requires specific response_format values
+      responseFormat = jsonSchema.type === 'json_object' ? { type: 'json_object' } : undefined;
+    } else if (jsonSchema && apiConfig.name !== 'OpenAI') {
+      // Other providers might use the schema directly
+      responseFormat = jsonSchema;
+    }
+    
     const response = await fetch(`${apiConfig.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -113,7 +124,7 @@ export async function callLLMAPI(
           { role: 'user', content: prompt }
         ],
         temperature: 0.2,
-        response_format: jsonSchema
+        ...(responseFormat && { response_format: responseFormat })
       })
     });
 
@@ -137,7 +148,12 @@ export async function callLLMAPI(
       }
       return content;
     } catch {
-      throw new Error('The response is not valid JSON');
+      // Not all responses need to be JSON
+      // If we're expecting JSON but got back non-JSON, that's probably an error
+      if (jsonSchema && jsonSchema.type === 'json_object') {
+        throw new Error('The response is not valid JSON');
+      }
+      return content;
     }
   }
 } 
