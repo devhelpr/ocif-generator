@@ -1,10 +1,8 @@
 import { OCIFSchema } from '../types/schema';
-import { zodResponseFormat } from "openai/helpers/zod";
-import { OCIFSchemaDefinition } from '../schemas/schema';
-import { createSchema } from 'zod-openapi';
 import { z , ZodTypeAny} from 'zod';
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { callLLMAPI, getCurrentAPIConfig } from './llm-api';
 
 
 interface GenerateStructuredOutputParams<T extends ZodTypeAny> {
@@ -42,50 +40,30 @@ function removeAdditionalProperties(schema: any): any {
   }
 }
 
-// export function zodToGeminiParameters(
-//   zodObj: z.ZodType<any>
-// ): GeminiFunctionSchema {
-//   const jsonSchema = zodToJsonSchema(zodObj) as any;
-//   const { $schema, ...rest } = jsonSchema;
 
-//   removeAdditionalProperties(rest); // Apply the recursive removal
-
-//   return rest;
+// interface APIConfig {
+//   name: string;
+//   baseUrl: string;
+//   apiKey: string;
 // }
 
-interface LLMResponse {
-  choices: Array<{
-    message: {
-      content: string;
-      role: string;
-    };
-    finish_reason: string;
-  }>;
-}
-
-interface APIConfig {
-  name: string;
-  baseUrl: string;
-  apiKey: string;
-}
-
-export function getCurrentAPIConfig(): APIConfig {
-  const savedSettings = localStorage.getItem('llmSettings');
-  if (savedSettings) {
-    const { apis, selectedAPI } = JSON.parse(savedSettings);
-    const selectedConfig = apis.find((api: APIConfig) => api.name === selectedAPI);
-    if (selectedConfig) {
-      return selectedConfig;
-    }
-  }
+// export function getCurrentAPIConfig(): APIConfig {
+//   const savedSettings = localStorage.getItem('llmSettings');
+//   if (savedSettings) {
+//     const { apis, selectedAPI } = JSON.parse(savedSettings);
+//     const selectedConfig = apis.find((api: APIConfig) => api.name === selectedAPI);
+//     if (selectedConfig) {
+//       return selectedConfig;
+//     }
+//   }
   
-  // Fallback to default OpenAI config
-  return {
-    name: 'OpenAI',
-    baseUrl: 'https://api.openai.com/v1',
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
-  };
-}
+//   // Fallback to default OpenAI config
+//   return {
+//     name: 'OpenAI',
+//     baseUrl: 'https://api.openai.com/v1',
+//     apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
+//   };
+// }
 
 export async function generateOCIFFromPrompt(
   prompt: string,
@@ -93,10 +71,6 @@ export async function generateOCIFFromPrompt(
 ): Promise<string> {
   const apiConfig = getCurrentAPIConfig();
   
-  if (!apiConfig.apiKey) {
-    throw new Error(`${apiConfig.name} API key is not set. Please configure it in the settings.`);
-  }
-
   // Create a system message that instructs the model to generate valid OCIF JSON
   const systemMessage = `You are an expert in generating Open Component Interconnect Format (OCIF) JSON files.
 Your task is to generate a valid OCIF JSON file based on the user's prompt.
@@ -190,288 +164,9 @@ Important rules:
     - If the prompt specifies colors or stroke widths, use those values instead of the defaults
     - Choose the appropriate shape type based on the context (e.g., use oval for countries, cities, or organic shapes)
 12. IMPORTANT: The generated OCIF file MUST include the "ocif" property with the value "https://canvasprotocol.org/ocif/0.4" as the first property in the JSON object.`;
-const jsonSchema = zodResponseFormat(OCIFSchemaDefinition, "open_canvas_interchange_format");
-jsonSchema.json_schema.strict = false;
+
   try {
-    // Use a try-catch block to handle potential response format validation errors
-    try {
-      // Handle Gemini API differently as it has a different endpoint structure
-      if (apiConfig.name === 'Gemini') {
-
-        //const schema = createSchema(OCIFSchemaDefinition);
-         const responseSchema = await generateStructuredOutput({schema:OCIFSchemaDefinition,
-          request:prompt
-        },apiConfig.apiKey);
-        console.log(responseSchema);
-        // const response = await fetch(`${apiConfig.baseUrl}${apiConfig.apiKey}`, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-           
-        //   },
-        //   mode: 'cors',
-        //   body: JSON.stringify({          
-        //     contents: [
-        //       {
-        //         role: 'user',
-        //         parts: [
-        //           { text: systemMessage },
-        //           { text: prompt }
-        //         ]
-        //       }
-        //     ],
-        //     generationConfig: {
-        //       response_mime_type: "application/json",
-        //       response_schema: schema.schema ,
-        //       temperature: 0.2,
-        //       topP: 0.8,
-        //       topK: 40,             
-        //     }
-        //   })
-        // });
-
-        // if (!response.ok) {
-        //   const errorData = await response.json();
-        //   throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
-        // }
-
-        // const data = await response.json();
-        
-        // // Extract the content from the Gemini response
-        // const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        // if (!content) {
-        //   throw new Error('No content returned from Gemini API');
-        // }
-
-        // Try to parse the content as JSON to ensure it's valid
-        try {
-          const parsedJson = responseSchema;//JSON.parse(content);
-          
-          // Ensure the ocif property is set correctly
-          if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
-            parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
-            return JSON.stringify(parsedJson, null, 2);
-          }
-          
-          return "{}";
-        } catch {
-          throw new Error('The response from Gemini is not valid JSON');
-        }
-      } else {
-        
-       
-
-        // Standard OpenAI-compatible API call
-        const response = await fetch(`${apiConfig.baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiConfig.apiKey}`
-          },
-          body: JSON.stringify({
-            model: apiConfig.name === 'OpenAI' ? 'gpt-4o' : 
-                   apiConfig.name === 'Anthropic' ? 'claude-3-7-sonnet-20250219' :
-                   apiConfig.name === 'Mistral' ? 'mistral-large' : 'gpt-4o',
-            messages: [
-              { role: 'system', content: systemMessage },
-              { role: 'user', content: prompt }
-            ],
-            temperature: 0.2, // Lower temperature for more deterministic output
-            
-            response_format: jsonSchema
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`${apiConfig.name} API error: ${errorData.error?.message || response.statusText}`);
-        }
-
-        const data: LLMResponse = await response.json();
-        
-        // Extract the content from the response
-        const content = data.choices[0]?.message?.content;
-        
-        if (!content) {
-          throw new Error('No content returned from API');
-        }
-
-        // Try to parse the content as JSON to ensure it's valid
-        try {
-          const parsedJson = JSON.parse(content);
-          
-          // Ensure the ocif property is set correctly
-          if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
-            parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
-            return JSON.stringify(parsedJson, null, 2);
-          }
-          
-          return content;
-        } catch {
-          throw new Error('The response is not valid JSON');
-        }
-      }
-    } catch (formatError) {
-      // If there's an error with the response format validation, fall back to the standard approach
-      console.warn('Response format validation failed, falling back to standard approach:', formatError);
-      
-      // Handle Gemini API differently for fallback
-      if (apiConfig.name === 'Gemini') {
-        const response = await fetch(`${apiConfig.baseUrl}${apiConfig.apiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-              
-          },
-          mode: 'cors',
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  { text: systemMessage },
-                  { text: prompt }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.2,
-              topP: 0.8,
-              topK: 40,
-              maxOutputTokens: 2048,
-            }
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        // Extract the content from the Gemini response
-        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (!content) {
-          throw new Error('No content returned from Gemini API');
-        }
-
-        // Try to parse the content as JSON to ensure it's valid
-        try {
-          const parsedJson = JSON.parse(content);
-          
-          // Ensure the ocif property is set correctly
-          if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
-            parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
-          }
-          
-          // Ensure nodes have the correct data structure
-          if (parsedJson.nodes) {
-            parsedJson.nodes.forEach((node: { data?: Array<{ type?: string }> }) => {
-              if (node.data && Array.isArray(node.data)) {
-                node.data.forEach((dataItem: { type?: string }) => {
-                  if (!dataItem.type) {
-                    dataItem.type = "@ocif/node/rect"; // Default type
-                  }
-                });
-              }
-            });
-          }
-          
-          // Ensure relations have the correct data structure
-          if (parsedJson.relations) {
-            parsedJson.relations.forEach((relation: { data?: Array<{ type?: string }> }) => {
-              if (relation.data && Array.isArray(relation.data)) {
-                relation.data.forEach((dataItem: { type?: string }) => {
-                  if (!dataItem.type) {
-                    dataItem.type = "@ocif/rel/edge"; // Default type
-                  }
-                });
-              }
-            });
-          }
-          
-          return JSON.stringify(parsedJson, null, 2);
-        } catch {
-          throw new Error('The response from Gemini is not valid JSON');
-        }
-      } else {
-        // Standard OpenAI-compatible API call for fallback
-        const response = await fetch(`${apiConfig.baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiConfig.apiKey}`
-          },
-          body: JSON.stringify({
-            model: apiConfig.name === 'OpenAI' ? 'gpt-4' : 
-                   apiConfig.name === 'Anthropic' ? 'claude-3-opus-20240229' :
-                   apiConfig.name === 'Mistral' ? 'mistral-large' : 'gpt-4',
-            messages: [
-              { role: 'system', content: systemMessage },
-              { role: 'user', content: prompt }
-            ],
-            temperature: 0.2, // Lower temperature for more deterministic output
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`${apiConfig.name} API error: ${errorData.error?.message || response.statusText}`);
-        }
-
-        const data: LLMResponse = await response.json();
-        
-        // Extract the content from the response
-        const content = data.choices[0]?.message?.content;
-        
-        if (!content) {
-          throw new Error('No content returned from API');
-        }
-
-        // Try to parse the content as JSON to ensure it's valid
-        try {
-          const parsedJson = JSON.parse(content);
-          
-          // Ensure the ocif property is set correctly
-          if (!parsedJson.ocif || parsedJson.ocif !== "https://canvasprotocol.org/ocif/0.4") {
-            parsedJson.ocif = "https://canvasprotocol.org/ocif/0.4";
-          }
-          
-          // Ensure nodes have the correct data structure
-          if (parsedJson.nodes) {
-            parsedJson.nodes.forEach((node: { data?: Array<{ type?: string }> }) => {
-              if (node.data && Array.isArray(node.data)) {
-                node.data.forEach((dataItem: { type?: string }) => {
-                  if (!dataItem.type) {
-                    dataItem.type = "@ocif/node/rect"; // Default type
-                  }
-                });
-              }
-            });
-          }
-          
-          // Ensure relations have the correct data structure
-          if (parsedJson.relations) {
-            parsedJson.relations.forEach((relation: { data?: Array<{ type?: string }> }) => {
-              if (relation.data && Array.isArray(relation.data)) {
-                relation.data.forEach((dataItem: { type?: string }) => {
-                  if (!dataItem.type) {
-                    dataItem.type = "@ocif/rel/edge"; // Default type
-                  }
-                });
-              }
-            });
-          }
-          
-          return JSON.stringify(parsedJson, null, 2);
-        } catch {
-          throw new Error('The response is not valid JSON');
-        }
-      }
-    }
+    return await callLLMAPI(prompt, systemMessage, apiConfig);
   } catch (error) {
     console.error('Error calling API:', error);
     throw error;
