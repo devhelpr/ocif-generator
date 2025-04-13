@@ -45,7 +45,7 @@ export const OCIFSchemaDefinition = z
               .array(z.number())
               .describe("Scale factors to resize nodes")
               .optional(),
-          })
+          }).passthrough()
           .describe("A node in the OCIF document")
       )
       .describe("A list of nodes")
@@ -59,7 +59,7 @@ export const OCIFSchemaDefinition = z
               .array(RelationDataSchema)
               .describe("Additional data for the relation.")
               .optional(),
-          })
+          }).passthrough()
           .describe("A relation between nodes")
       )
       .describe("A list of relations")
@@ -100,33 +100,8 @@ export const OCIFSchemaDefinition = z
       )
       .describe("A list of resources")
       .optional(),
-    schemas: z
-      .array(
-        z
-          .object({
-            uri: z
-              .string()
-              .describe(
-                "The URI of the schema, Identifier (and location) of the schema."
-              ),
-            schema: z
-              .record(z.any())
-              .describe("The actual JSON schema as a JSON object.")
-              .optional(),
-            location: z
-              .string()
-              .describe("The storage location for the schema.")
-              .optional(),
-            name: z
-              .string()
-              .describe("An optional short name for the schema.")
-              .optional(),
-          })
-          .describe("A schema in the OCIF document")
-      )
-      .describe("Declared schemas")
-      .optional(),
-  })
+    
+  }).passthrough()
   .describe(
     "The schema for the Open Component Interconnect Format (OCIF) Core document structure."
   );

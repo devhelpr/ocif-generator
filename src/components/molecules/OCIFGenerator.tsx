@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import Ajv2020 from "ajv/dist/2020"
-import { IconButton } from '../atoms/IconButton';
 import { OCIFSchema } from '../../types/schema';
-import { generateOCIFFromPrompt } from '../../services/openai';
+import { generateOCIFFromPrompt } from '../../services/llm';
 import { applyD3ForceLayout } from '../../services/d3Layout';
+import { Settings } from './Settings';
 
 // Import the schema
 import schemaJson from '../../../schema.json';
@@ -18,12 +18,11 @@ export function OCIFGenerator() {
   const [generatedOCIF, setGeneratedOCIF] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isValid, setIsValid] = useState<boolean | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
     setError(null);
-    setIsValid(null);
   };
 
   const handleGenerate = async () => {
@@ -34,10 +33,9 @@ export function OCIFGenerator() {
 
     setIsLoading(true);
     setError(null);
-    setIsValid(null);
 
     try {
-      // Call the OpenAI API to generate the OCIF file
+      // Call the LLM API to generate the OCIF file
       const response = await generateOCIFFromPrompt(prompt, schema);
       
       // Try to parse the response as JSON
@@ -56,7 +54,6 @@ export function OCIFGenerator() {
 
       // Validate against the schema
       const valid = validate(layoutedResponse);
-      setIsValid(valid);
       
       if (!valid) {
         setError(`Validation failed: ${ajv.errorsText(validate.errors)}`);
@@ -89,6 +86,16 @@ export function OCIFGenerator() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-zinc-900">Generate OCIF</h2>
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="inline-flex items-center px-3 py-2 border border-zinc-300 shadow-sm text-sm font-medium rounded-md text-zinc-700 bg-white hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Settings
+        </button>
+      </div>
+
       <div>
         <label htmlFor="prompt" className="block text-sm font-medium text-zinc-700 mb-2">
           Enter your prompt to generate an OCIF file
@@ -132,40 +139,31 @@ export function OCIFGenerator() {
       )}
 
       {generatedOCIF && (
-        <div>
-          <div className="flex justify-between items-center mb-2">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium text-zinc-900">Generated OCIF</h3>
             <div className="flex space-x-2">
-              <IconButton
+              <button
                 onClick={handleCopyToClipboard}
-                icon="📋"
-                variant="subtle"
+                className="inline-flex items-center px-3 py-2 border border-zinc-300 shadow-sm text-sm font-medium rounded-md text-zinc-700 bg-white hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                Copy
-              </IconButton>
-              <IconButton
+                Copy to Clipboard
+              </button>
+              <button
                 onClick={handleDownload}
-                icon="⬇️"
-                variant="subtle"
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Download
-              </IconButton>
+              </button>
             </div>
           </div>
-          <div className="relative">
-            <pre className="bg-zinc-50 p-4 rounded-lg overflow-auto max-h-96 text-sm">
-              <code>{generatedOCIF}</code>
-            </pre>
-            {isValid !== null && (
-              <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${
-                isValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {isValid ? 'Valid OCIF' : 'Invalid OCIF'}
-              </div>
-            )}
-          </div>
+          <pre className="bg-zinc-50 p-4 rounded-lg overflow-auto max-h-96 text-sm">
+            {generatedOCIF}
+          </pre>
         </div>
       )}
+
+      <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 } 
