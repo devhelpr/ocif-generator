@@ -381,20 +381,20 @@ Important rules:
         <label htmlFor="prompt" className="block text-sm font-medium text-zinc-700 mb-2">
           Enter your prompt to generate an OCIF file
         </label>
-        <p className="text-sm text-zinc-500 mb-2">
+        <p className="text-sm text-zinc-500 mb-4">
           Describe the components and their relationships. The layout will be automatically generated using d3-force.
           When you describe connections between components, arrows will be automatically created to visualize these relationships.
           Each node will have a descriptive title based on your prompt. You can specify shapes (rectangles or ovals) and colors in your prompt.
         </p>
         <textarea
           id="prompt"
-          rows={4}
-          className="w-full rounded-lg border-zinc-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          rows={5}
+          className="w-full rounded-lg border border-zinc-200 shadow-sm focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 p-4 mt-2 text-base"
           placeholder="Example: Create a diagram showing Berlin (green rectangle) as the capital of Germany (red oval), with an arrow connecting them. Include descriptive titles for each node."
           value={prompt}
           onChange={handlePromptChange}
         />
-        <div className="mt-2 flex justify-end space-x-2">
+        <div className="mt-4 flex justify-end space-x-2">
           <button
             type="button"
             onClick={handleGenerate}
