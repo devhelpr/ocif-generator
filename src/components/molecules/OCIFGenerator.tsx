@@ -134,6 +134,14 @@ export function OCIFGenerator() {
     setParsedOCIF(null);
 
     try {
+      // Check if API key is set
+      const apiConfig = getCurrentAPIConfig();
+      if (!apiConfig.apiKey) {
+        setError(`No API key set for ${apiConfig.name}. Please configure it in the Settings.`);
+        setIsLoading(false);
+        return;
+      }
+
       // Call the LLM API to generate the OCIF file
       const response = await generateOCIFFromPrompt(prompt, schema);
       
@@ -288,6 +296,13 @@ Important rules:
 12. IMPORTANT: The generated OCIF file MUST include the "ocif" property with the value "https://canvasprotocol.org/ocif/0.4" as the first property in the JSON object.`;
 
       const apiConfig = getCurrentAPIConfig();
+      
+      // Check if API key is set
+      if (!apiConfig.apiKey) {
+        setError(`No API key set for ${apiConfig.name}. Please configure it in the Settings.`);
+        setIsEvaluating(false);
+        return;
+      }
       
       // Evaluate the output and rerun if needed
       const result = await evaluateAndRerunIfNeeded(
