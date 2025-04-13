@@ -100,7 +100,7 @@ export function OCIFGenerator() {
                 : undefined
             };
             
-            ocifForSvg.nodes[node.id] = nodeForSvg;
+            ocifForSvg.nodes![node.id] = nodeForSvg;
           }
         });
       }
