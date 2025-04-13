@@ -51,6 +51,8 @@ node b should be yellow and node c should be green.
 node e should be orange.
 
 make it beautiful and have the nodes have darker strokes then the fill color
+
+put nodes d,e,f in a group
 ```
 
 ```

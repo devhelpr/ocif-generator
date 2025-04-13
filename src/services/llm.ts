@@ -163,7 +163,16 @@ Important rules:
       }
     - If the prompt specifies colors or stroke widths, use those values instead of the defaults
     - Choose the appropriate shape type based on the context (e.g., use oval for countries, cities, or organic shapes)
-12. IMPORTANT: The generated OCIF file MUST include the "ocif" property with the value "https://canvasprotocol.org/ocif/0.4" as the first property in the JSON object.`;
+12. IMPORTANT: The generated OCIF file MUST include the "ocif" property with the value "https://canvasprotocol.org/ocif/0.4" as the first property in the JSON object.
+13. For groups: include a group relation between the group and the nodes it contains.
+      {
+        "id":"group-1",
+        "data" : [{
+          "type": "@ocif/rel/group",
+          "members": ["node-id", "node-id", "node-id"],
+        }]
+      }
+`;
 
   try {
     return await callLLMAPI(prompt, systemMessage, apiConfig);
