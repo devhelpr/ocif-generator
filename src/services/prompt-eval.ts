@@ -1,4 +1,4 @@
-import { callLLMAPI, getCurrentAPIConfig } from './llm-api';
+import { callLLMAPI, getCurrentAPIConfig, removeMarkdownCodeBlocks } from './llm-api';
 
 // Define APIConfig interface since it's not exported from llm-api
 export interface APIConfig {
@@ -125,8 +125,11 @@ rather than stylistic preferences.`;
       responseSchema
     );
 
-    // Parse the response
-    const evaluation = JSON.parse(evaluationResponse) as EvaluationResult;
+    // Clean markdown if needed
+    const cleanedResponse = removeMarkdownCodeBlocks(evaluationResponse);
+
+    // Parse the cleaned response
+    const evaluation = JSON.parse(cleanedResponse) as EvaluationResult;
     return evaluation;
     
   } catch (error) {

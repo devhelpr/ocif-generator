@@ -51,6 +51,11 @@ node b should be yellow and node c should be green.
 node e should be orange.
 ```
 
+```
+create a flow that illustrates an llm prompt evaluating pipeline
+```
+
+
 ## Features
 
 - Support for multiple LLM APIs (OpenAI, Anthropic, Mistral, Google Gemini)
