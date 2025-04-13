@@ -6,6 +6,8 @@ import { applyD3ForceLayout } from '../../services/d3Layout';
 import { Settings } from './Settings';
 import { evaluateAndRerunIfNeeded } from '../../services/prompt-eval';
 import { getCurrentAPIConfig } from '../../services/llm-api';
+import { generateSVG } from '../../services/svg-service';
+import { OCIFJson, OCIFNode } from '../../services/svg-ocif-types/ocif';
 
 // Define the evaluation result type
 interface EvaluationResult {
@@ -16,6 +18,9 @@ interface EvaluationResult {
   score: number;
   reasoning: string;
 }
+
+// Define view modes
+type ViewMode = 'json' | 'svg';
 
 // Import the schema
 import schemaJson from '../../../schema.json';
@@ -28,6 +33,9 @@ const validate = ajv.compile(schema);
 export function OCIFGenerator() {
   const [prompt, setPrompt] = useState('');
   const [generatedOCIF, setGeneratedOCIF] = useState('');
+  const [parsedOCIF, setParsedOCIF] = useState<OCIFJson | null>(null);
+  const [svgContent, setSvgContent] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('json');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -40,6 +48,79 @@ export function OCIFGenerator() {
     setEvaluation(null);
   };
 
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    
+    // If switching to SVG view and we have parsed OCIF but no SVG content yet, generate it
+    if (mode === 'svg' && parsedOCIF && !svgContent) {
+      try {
+        const svg = generateSVG(parsedOCIF);
+        setSvgContent(svg);
+      } catch (err) {
+        console.error('Error generating SVG:', err);
+        setError('Failed to generate SVG visualization.');
+      }
+    }
+  };
+  
+  // Create an SVG-compatible OCIF object from D3 layout data
+  const createSvgCompatibleOcif = (layoutedData: unknown): OCIFJson => {
+    // Create a base OCIFJson object with required fields
+    const ocifForSvg: OCIFJson = {
+      version: '1.0',
+      nodes: {},
+      relations: [],
+      resources: []
+    };
+    
+    try {
+      // Get typed data with a safer approach
+      const data = layoutedData as {
+        ocif: string;
+        nodes?: Array<{ id: string; position?: number[]; [key: string]: unknown }>;
+        relations?: unknown[];
+        resources?: unknown[];
+      };
+      
+      // Set version if available
+      if (data.ocif) {
+        ocifForSvg.version = data.ocif;
+      }
+      
+      // Process nodes if available
+      if (data.nodes && Array.isArray(data.nodes)) {
+        data.nodes.forEach(node => {
+          if (node && node.id) {
+            // Create a deep copy to avoid reference issues
+            const nodeForSvg: OCIFNode = {
+              ...node,
+              // Ensure position is correctly formatted if it exists
+              position: Array.isArray(node.position) && node.position.length >= 2 
+                ? [node.position[0], node.position[1]] 
+                : undefined
+            };
+            
+            ocifForSvg.nodes[node.id] = nodeForSvg;
+          }
+        });
+      }
+      
+      // Process relations if available with forced casting
+      if (data.relations && Array.isArray(data.relations)) {
+        ocifForSvg.relations = data.relations as OCIFJson['relations'];
+      }
+      
+      // Process resources if available with forced casting
+      if (data.resources && Array.isArray(data.resources)) {
+        ocifForSvg.resources = data.resources as OCIFJson['resources'];
+      }
+    } catch (error) {
+      console.error('Error creating SVG-compatible OCIF', error);
+    }
+    
+    return ocifForSvg;
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setError('Please enter a prompt');
@@ -49,6 +130,8 @@ export function OCIFGenerator() {
     setIsLoading(true);
     setError(null);
     setEvaluation(null);
+    setSvgContent('');
+    setParsedOCIF(null);
 
     try {
       // Call the LLM API to generate the OCIF file
@@ -75,7 +158,23 @@ export function OCIFGenerator() {
         setError(`Validation failed: ${ajv.errorsText(validate.errors)}`);
       }
 
+      // Store string version
       setGeneratedOCIF(JSON.stringify(layoutedResponse, null, 2));
+      
+      // Create SVG-compatible JSON
+      const ocifForSvg = createSvgCompatibleOcif(layoutedResponse);
+      setParsedOCIF(ocifForSvg);
+      
+      // Generate SVG if in SVG view mode
+      if (viewMode === 'svg') {
+        try {
+          const svg = generateSVG(ocifForSvg);
+          setSvgContent(svg);
+        } catch (svgError) {
+          console.error('Error generating SVG:', svgError);
+          setError('Failed to generate SVG visualization.');
+        }
+      }
     } catch (err) {
       setError('An error occurred while generating the OCIF file.');
       console.error(err);
@@ -209,6 +308,20 @@ Important rules:
           
           // Set the improved output
           setGeneratedOCIF(JSON.stringify(layoutedImproved, null, 2));
+
+          // Create SVG-compatible JSON
+          const ocifForSvgImproved = createSvgCompatibleOcif(layoutedImproved);
+          setParsedOCIF(ocifForSvgImproved);
+          
+          // Update SVG if we're in SVG view mode
+          if (viewMode === 'svg') {
+            try {
+              const svg = generateSVG(ocifForSvgImproved);
+              setSvgContent(svg);
+            } catch (svgError) {
+              console.error('Error generating SVG:', svgError);
+            }
+          }
         } catch (parseError) {
           console.error('Error parsing improved output:', parseError);
           // Keep original output if parsing fails
@@ -223,15 +336,29 @@ Important rules:
   };
 
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(generatedOCIF);
+    if (viewMode === 'json') {
+      navigator.clipboard.writeText(generatedOCIF);
+    } else {
+      navigator.clipboard.writeText(svgContent);
+    }
   };
 
   const handleDownload = () => {
-    const blob = new Blob([generatedOCIF], { type: 'application/json' });
+    let blob;
+    let filename;
+    
+    if (viewMode === 'json') {
+      blob = new Blob([generatedOCIF], { type: 'application/json' });
+      filename = 'ocif-file.json';
+    } else {
+      blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      filename = 'ocif-diagram.svg';
+    }
+    
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ocif-file.json';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -343,10 +470,38 @@ Important rules:
         </div>
       )}
       
-      {generatedOCIF && (
+      {(generatedOCIF || svgContent) && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-zinc-900">Generated OCIF</h3>
+            <div className="flex items-center space-x-4">
+              <h3 className="text-lg font-medium text-zinc-900">
+                {viewMode === 'json' ? 'Generated OCIF' : 'OCIF Diagram'}
+              </h3>
+              <div className="inline-flex rounded-md shadow-sm" role="group">
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange('json')}
+                  className={`px-4 py-2 text-sm font-medium rounded-l-md ${
+                    viewMode === 'json' 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  } border border-gray-300 focus:z-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10`}
+                >
+                  JSON
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange('svg')}
+                  className={`px-4 py-2 text-sm font-medium rounded-r-md ${
+                    viewMode === 'svg' 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  } border border-gray-300 focus:z-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10`}
+                >
+                  SVG
+                </button>
+              </div>
+            </div>
             <div className="flex space-x-2">
               <button
                 onClick={handleCopyToClipboard}
@@ -362,9 +517,26 @@ Important rules:
               </button>
             </div>
           </div>
-          <pre className="bg-zinc-50 p-4 rounded-lg overflow-auto max-h-96 text-sm">
-            {generatedOCIF}
-          </pre>
+
+          {viewMode === 'json' ? (
+            <pre className="bg-zinc-50 p-4 rounded-lg overflow-auto max-h-96 text-sm">
+              {generatedOCIF}
+            </pre>
+          ) : (
+            <div className="bg-white p-4 rounded-lg overflow-auto max-h-[500px] border border-zinc-300">
+              {svgContent ? (
+                <div dangerouslySetInnerHTML={{ __html: svgContent }} />
+              ) : (
+                <div className="flex items-center justify-center h-64 text-zinc-400">
+                  <p>
+                    {parsedOCIF 
+                      ? 'Generating SVG visualization...' 
+                      : 'Generate OCIF content first to view SVG visualization'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
