@@ -99,7 +99,7 @@ specific hints for improvement.
     const evaluationSystemPrompt = `
 You are an expert evaluator of LLM outputs. Your task is to objectively assess 
 how well an LLM-generated output matches both the user's original prompt and 
-the system prompt instructions.
+the system prompt instructions. Double check the connections between nodes.
 
 Return your evaluation as a JSON object with the following structure:
 {
@@ -160,8 +160,8 @@ export async function rerunPromptWithHints(
   evaluation: EvaluationResult,
   apiConfig: APIConfig
 ): Promise<string> {
-  // Only rerun if the score is below 7
-  if (evaluation.score >= 7) {
+  // Only rerun if the score is below 10
+  if (evaluation.score >= 10) {
     return ''; // Don't rerun if the score is good enough
   }
 
