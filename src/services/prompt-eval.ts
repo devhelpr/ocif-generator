@@ -215,7 +215,7 @@ export async function evaluateAndRerunIfNeeded(
   );
   
   // If the score is too low, rerun with hints
-  if (evaluation.score < 7) {
+  if (evaluation.score < 10) {
     const improvedOutput = await rerunPromptWithHints(
       originalPrompt,
       systemPrompt,

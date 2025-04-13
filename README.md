@@ -49,12 +49,17 @@ node d should be an oval.
 node a should be blue and node f should be red.
 node b should be yellow and node c should be green.
 node e should be orange.
+
+make it beautiful and have the nodes have darker strokes then the fill color
 ```
 
 ```
 create a flow that illustrates an llm prompt evaluating pipeline
 ```
 
+```
+create a complex flow that illustrates an llm prompt evaluating pipeline with a feedback loop that runs max 5 times
+```
 
 ## Features
 
