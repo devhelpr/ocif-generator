@@ -1,6 +1,6 @@
 import cytoscape from "cytoscape";
 import elk from "cytoscape-elk";
-import { ElkLayoutOptions } from "../types/cytoscape-elk";
+import type { ElkLayoutOptions } from "cytoscape-elk";
 
 // Register the elk layout
 cytoscape.use(elk);

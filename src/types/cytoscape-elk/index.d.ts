@@ -1,7 +1,7 @@
-declare module "cytoscape-elk" {
-  import cytoscape from "cytoscape";
+import cytoscape from "cytoscape";
 
-  export interface ElkLayoutOptions extends cytoscape.LayoutOptions {
+declare module "cytoscape-elk" {
+  interface ElkLayoutOptions extends cytoscape.LayoutOptions {
     name: "elk";
     nodeDimensionsIncludeLabels?: boolean;
     elk?: {
@@ -18,12 +18,10 @@ declare module "cytoscape-elk" {
       "elk.layered.spacing.edgeEdgeBetweenLayers"?: number;
       "elk.layered.spacing.edgeNodeBetweenLayers"?: number;
       "elk.layered.spacing.nodeNodeBetweenLayers"?: number;
-      feedbackEdges?: boolean;
-      "elk.layered.nodePlacement.bk.fixedAlignment"?: string;
-      "elk.edgeRouting"?: "ORTHOGONAL" | "POLYLINE" | "SPLINES";
     };
   }
 
   const ext: cytoscape.Ext;
   export default ext;
+  export { ElkLayoutOptions };
 }
