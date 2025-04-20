@@ -149,13 +149,18 @@ export function applyCytoscapeLayout(ocifData: OCIFData): OCIFData {
   const layoutOptions: DagreLayoutOptions = {
     name: "dagre",
     rankDir: "TB",
-    align: "UL",
+    //align: "UL",
+    direction: "LR",
     nodeSep: 50,
     edgeSep: 50,
     rankSep: 50,
+    ranker: "longest-path",
     padding: padding,
+    random: true,
     animate: false,
-    fit: true,
+    fit: false,
+    useFixedHeight: true,
+    fixedHeight: 800,
   };
 
   const layout = cy.layout(layoutOptions);
