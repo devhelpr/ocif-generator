@@ -1,8 +1,9 @@
 import cytoscape from "cytoscape";
-import dagre from "cytoscape-dagre";
-import { DagreLayoutOptions } from "../types/cytoscape-dagre";
-// Register the dagre layout
-cytoscape.use(dagre);
+import elk from "cytoscape-elk";
+import { ElkLayoutOptions } from "../types/cytoscape-elk";
+
+// Register the elk layout
+cytoscape.use(elk);
 
 interface NodeData {
   type: string;
@@ -145,22 +146,30 @@ export function applyCytoscapeLayout(ocifData: OCIFData): OCIFData {
     pan: { x: 0, y: 0 },
   });
 
-  // Apply dagre layout
-  const layoutOptions: DagreLayoutOptions = {
-    name: "dagre",
-    rankDir: "TB",
-    //align: "UL",
-    direction: "LR",
-    nodeSep: 50,
-    edgeSep: 50,
-    rankSep: 50,
-    ranker: "longest-path",
-    padding: padding,
-    random: true,
-    animate: false,
-    fit: false,
-    useFixedHeight: true,
-    fixedHeight: 800,
+  // Apply ELK layout
+  const layoutOptions: ElkLayoutOptions = {
+    name: "elk",
+    nodeDimensionsIncludeLabels: true,
+    elk: {
+      algorithm: "layered",
+      direction: "RIGHT",
+      feedbackEdges: true,
+
+      // === spacing & padding ===
+      "elk.padding": 20,
+      "elk.spacing.nodeNode": 80,
+      "elk.layered.spacing.baseValue": 50,
+      "elk.layered.spacing.edgeNodeBetweenLayers": 50,
+      "elk.layered.spacing.nodeNodeBetweenLayers": 50,
+      "elk.layered.spacing.edgeEdgeBetweenLayers": 20,
+
+      // === node placement ===
+      "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
+      "elk.layered.nodePlacement.bk.fixedAlignment": "BALANCED",
+
+      // === edge routing ===
+      "elk.edgeRouting": "ORTHOGONAL",
+    },
   };
 
   const layout = cy.layout(layoutOptions);
