@@ -1,9 +1,8 @@
-import { OCIFSchema } from '../types/schema';
-import { z , ZodTypeAny} from 'zod';
+import { OCIFSchema } from "../types/schema";
+import { z, ZodTypeAny } from "zod";
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { callLLMAPI, getCurrentAPIConfig } from './llm-api';
-
+import { callLLMAPI, getCurrentAPIConfig } from "./llm-api";
 
 interface GenerateStructuredOutputParams<T extends ZodTypeAny> {
   schema: T;
@@ -11,35 +10,32 @@ interface GenerateStructuredOutputParams<T extends ZodTypeAny> {
   temperature?: number;
 }
 
-export async function generateStructuredOutput<T extends ZodTypeAny>({
-  schema,
-  request,
-  temperature = 1.5
-  
-}: GenerateStructuredOutputParams<T>,apiKey = ""): Promise<z.infer<T>> {
+export async function generateStructuredOutput<T extends ZodTypeAny>(
+  { schema, request, temperature = 1.5 }: GenerateStructuredOutputParams<T>,
+  apiKey = ""
+): Promise<z.infer<T>> {
   const model = new ChatGoogleGenerativeAI({
     model: "gemini-2.0-flash",
     apiKey: apiKey,
     temperature,
   });
   removeAdditionalProperties(schema);
-  const structuredLlm = model.withStructuredOutput(schema,{
-    strict:false
+  const structuredLlm = model.withStructuredOutput(schema, {
+    strict: false,
   });
   return await structuredLlm.invoke(request);
 }
 
 function removeAdditionalProperties(schema: any): any {
-  if (schema && typeof schema === 'object') {
+  if (schema && typeof schema === "object") {
     delete schema.additionalProperties; // Remove from current level
-    Object.values(schema).forEach(value => {
-      if (typeof value === 'object') {
+    Object.values(schema).forEach((value) => {
+      if (typeof value === "object") {
         removeAdditionalProperties(value); // Apply recursively to nested objects
       }
     });
   }
 }
-
 
 // interface APIConfig {
 //   name: string;
@@ -56,7 +52,7 @@ function removeAdditionalProperties(schema: any): any {
 //       return selectedConfig;
 //     }
 //   }
-  
+
 //   // Fallback to default OpenAI config
 //   return {
 //     name: 'OpenAI',
@@ -70,9 +66,9 @@ export async function generateOCIFFromPrompt(
   schema: OCIFSchema
 ): Promise<string> {
   const apiConfig = getCurrentAPIConfig();
-  
+
   // Create a system message that instructs the model to generate valid OCIF JSON
-  const systemMessage = `You are an expert in generating Open Component Interconnect Format (OCIF) JSON files.
+  const systemMessage = `You are an expert in generating flow diagram and flowcharts in  Open Component Interconnect Format (OCIF) JSON files.
 Your task is to generate a valid OCIF JSON file based on the user's prompt.
 The JSON must strictly follow this schema:
 ${JSON.stringify(schema, null, 2)}
@@ -177,7 +173,7 @@ Important rules:
   try {
     return await callLLMAPI(prompt, systemMessage, apiConfig);
   } catch (error) {
-    console.error('Error calling API:', error);
+    console.error("Error calling API:", error);
     throw error;
   }
-} 
+}

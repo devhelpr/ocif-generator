@@ -12,6 +12,9 @@
   "dependencies": {
     "@langchain/core": "^0.3.43",
     "@langchain/google-genai": "^0.2.2",
+    "cytoscape": "^3.31.2",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "cytoscape-dagre": "^2.5.0",
     "d3-force": "^3.0.0",
     "json5": "^2.2.3",
     "langchain": "^0.3.20",
