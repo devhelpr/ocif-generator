@@ -8,6 +8,7 @@ import { evaluateAndRerunIfNeeded } from "../../services/prompt-eval";
 import { getCurrentAPIConfig } from "../../services/llm-api";
 import { generateSVG } from "../../services/svg-service";
 import { OCIFJson, OCIFNode } from "../../services/svg-ocif-types/ocif";
+import { ReactFlowView } from "./ReactFlowView";
 
 // Define the evaluation result type
 interface EvaluationResult {
@@ -20,7 +21,7 @@ interface EvaluationResult {
 }
 
 // Define view modes
-type ViewMode = "json" | "svg";
+type ViewMode = "json" | "svg" | "flow";
 
 // Import the schema
 import schemaJson from "../../../schema.json";
@@ -419,7 +420,11 @@ export function OCIFGenerator() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h3 className="text-lg font-medium text-zinc-900">
-                {viewMode === "json" ? "Generated OCIF" : "OCIF Diagram"}
+                {viewMode === "json"
+                  ? "Generated OCIF"
+                  : viewMode === "svg"
+                  ? "OCIF Diagram"
+                  : "Flow View"}
               </h3>
               <div className="inline-flex rounded-md shadow-sm" role="group">
                 <button
@@ -444,6 +449,17 @@ export function OCIFGenerator() {
                 >
                   SVG
                 </button>
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange("flow")}
+                  className={`px-4 py-2 text-sm font-medium rounded-r-md ${
+                    viewMode === "flow"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                  } border border-gray-300 focus:z-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10`}
+                >
+                  Flow
+                </button>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -462,25 +478,19 @@ export function OCIFGenerator() {
             </div>
           </div>
 
-          {viewMode === "json" ? (
-            <pre className="bg-zinc-50 p-4 rounded-lg overflow-auto max-h-96 text-sm">
-              {generatedOCIF}
-            </pre>
-          ) : (
-            <div className="bg-white p-4 rounded-lg overflow-auto max-h-[500px] border border-zinc-300">
-              {svgContent ? (
-                <div dangerouslySetInnerHTML={{ __html: svgContent }} />
-              ) : (
-                <div className="flex items-center justify-center h-64 text-zinc-400">
-                  <p>
-                    {parsedOCIF
-                      ? "Generating SVG visualization..."
-                      : "Generate OCIF content first to view SVG visualization"}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="border rounded-lg p-4 min-h-[500px]">
+            {viewMode === "json" && (
+              <pre className="whitespace-pre-wrap">{generatedOCIF}</pre>
+            )}
+            {viewMode === "svg" && svgContent && (
+              <div dangerouslySetInnerHTML={{ __html: svgContent }} />
+            )}
+            {viewMode === "flow" && parsedOCIF && (
+              <div className="w-full h-[500px]">
+                <ReactFlowView ocifData={parsedOCIF} />
+              </div>
+            )}
+          </div>
         </div>
       )}
 
