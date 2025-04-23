@@ -9,6 +9,7 @@ import { getCurrentAPIConfig } from "../../services/llm-api";
 import { generateSVG } from "../../services/svg-service";
 import { OCIFJson, OCIFNode } from "../../services/svg-ocif-types/ocif";
 import { ReactFlowView } from "./ReactFlowView";
+import { LayoutOptions, LayoutType } from "./LayoutOptions";
 
 // Define the evaluation result type
 interface EvaluationResult {
@@ -43,6 +44,7 @@ export function OCIFGenerator() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [layout, setLayout] = useState<LayoutType>("grid");
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
@@ -487,10 +489,16 @@ export function OCIFGenerator() {
             )}
             {viewMode === "flow" && parsedOCIF && (
               <div className="w-full h-[500px]">
-                <ReactFlowView ocifData={parsedOCIF} />
+                <ReactFlowView ocifData={parsedOCIF} layout={layout} />
               </div>
             )}
           </div>
+
+          {viewMode === "flow" && (
+            <div className="flex justify-center">
+              <LayoutOptions layout={layout} onLayoutChange={setLayout} />
+            </div>
+          )}
         </div>
       )}
 

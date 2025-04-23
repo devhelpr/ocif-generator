@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -14,7 +14,7 @@ import "reactflow/dist/style.css";
 import { OCIFJson } from "../../services/svg-ocif-types/ocif";
 import CustomNode from "./CustomNode";
 import { renderMarkdownToSVGText } from "../../services/utils/markdownToSVGText";
-import { LayoutOptions, LayoutType } from "./LayoutOptions";
+import { LayoutType } from "./LayoutOptions";
 import dagre from "dagre";
 
 const nodeTypes = {
@@ -25,6 +25,7 @@ const nodeTypes = {
 
 interface ReactFlowViewProps {
   ocifData: OCIFJson | null;
+  layout: LayoutType;
 }
 
 // Helper function to get text from linked resource
@@ -68,23 +69,30 @@ const getNodeText = (
 // Layout functions
 const getDagreLayout = (nodes: Node[], edges: Edge[]) => {
   const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setGraph({ rankdir: "LR" }); // Set layout direction left to right
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  const nodeWidth = 150;
-  const nodeHeight = 50;
-
+  // Add nodes to the graph
   nodes.forEach((node) => {
+    const nodeWidth = node.data?.style?.width || 150;
+    const nodeHeight = node.data?.style?.height || 50;
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
   });
 
+  // Add edges to the graph
   edges.forEach((edge) => {
     dagreGraph.setEdge(edge.source, edge.target);
   });
 
+  // Run the layout
   dagre.layout(dagreGraph);
 
+  // Get the layout results
   return nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
+    const nodeWidth = node.data?.style?.width || 150;
+    const nodeHeight = node.data?.style?.height || 50;
+
     return {
       ...node,
       position: {
@@ -322,14 +330,9 @@ const FlowContent = ({
   );
 };
 
-export function ReactFlowView({ ocifData }: ReactFlowViewProps) {
-  const [layout, setLayout] = useState<LayoutType>("grid");
-
+export function ReactFlowView({ ocifData, layout }: ReactFlowViewProps) {
   return (
     <div style={{ width: "100%", height: "100%", minHeight: "500px" }}>
-      <div className="absolute top-4 right-4 z-10">
-        <LayoutOptions layout={layout} onLayoutChange={setLayout} />
-      </div>
       <ReactFlowProvider>
         <FlowContent ocifData={ocifData} layout={layout} />
       </ReactFlowProvider>
