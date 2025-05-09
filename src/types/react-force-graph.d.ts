@@ -7,6 +7,8 @@ declare module "react-force-graph-2d" {
       name: string;
       val?: number;
       color?: string;
+      x?: number;
+      y?: number;
       [key: string]: any;
     }>;
     links: Array<{
@@ -28,6 +30,11 @@ declare module "react-force-graph-2d" {
     height?: number;
     cooldownTicks?: number;
     onEngineStop?: () => void;
+    nodeCanvasObject?: (
+      node: GraphData["nodes"][0],
+      ctx: CanvasRenderingContext2D,
+      globalScale: number
+    ) => void;
     [key: string]: any;
   }
 
