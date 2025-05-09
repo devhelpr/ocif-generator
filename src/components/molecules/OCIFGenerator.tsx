@@ -10,6 +10,7 @@ import { generateSVG } from "../../services/svg-service";
 import { OCIFJson, OCIFNode } from "../../services/svg-ocif-types/ocif";
 import { ReactFlowView } from "./ReactFlowView";
 import { LayoutOptions, LayoutType } from "./LayoutOptions";
+import { ColaGraphView } from "./ColaGraphView";
 
 // Define the evaluation result type
 interface EvaluationResult {
@@ -22,7 +23,7 @@ interface EvaluationResult {
 }
 
 // Define view modes
-type ViewMode = "json" | "svg" | "flow";
+type ViewMode = "json" | "svg" | "flow" | "cola";
 
 // Import the schema
 import schemaJson from "../../../schema.json";
@@ -426,41 +427,50 @@ export function OCIFGenerator() {
                   ? "Generated OCIF"
                   : viewMode === "svg"
                   ? "OCIF Diagram"
-                  : "Flow View"}
+                  : viewMode === "flow"
+                  ? "Flow View"
+                  : "Cola View"}
               </h3>
-              <div className="inline-flex rounded-md shadow-sm" role="group">
+              <div className="flex space-x-2 mb-4">
                 <button
-                  type="button"
                   onClick={() => handleViewModeChange("json")}
-                  className={`px-4 py-2 text-sm font-medium rounded-l-md ${
+                  className={`px-4 py-2 rounded ${
                     viewMode === "json"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                  } border border-gray-300 focus:z-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10`}
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
                 >
                   JSON
                 </button>
                 <button
-                  type="button"
                   onClick={() => handleViewModeChange("svg")}
-                  className={`px-4 py-2 text-sm font-medium rounded-r-md ${
+                  className={`px-4 py-2 rounded ${
                     viewMode === "svg"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                  } border border-gray-300 focus:z-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10`}
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
                 >
                   SVG
                 </button>
                 <button
-                  type="button"
                   onClick={() => handleViewModeChange("flow")}
-                  className={`px-4 py-2 text-sm font-medium rounded-r-md ${
+                  className={`px-4 py-2 rounded ${
                     viewMode === "flow"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                  } border border-gray-300 focus:z-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10`}
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
                 >
                   Flow
+                </button>
+                <button
+                  onClick={() => handleViewModeChange("cola")}
+                  className={`px-4 py-2 rounded ${
+                    viewMode === "cola"
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  Cola
                 </button>
               </div>
             </div>
@@ -482,15 +492,23 @@ export function OCIFGenerator() {
 
           <div className="border rounded-lg p-4 min-h-[500px]">
             {viewMode === "json" && (
-              <pre className="whitespace-pre-wrap">{generatedOCIF}</pre>
+              <pre className="bg-gray-100 p-4 rounded-lg overflow-auto">
+                {generatedOCIF}
+              </pre>
             )}
             {viewMode === "svg" && svgContent && (
-              <div dangerouslySetInnerHTML={{ __html: svgContent }} />
+              <div
+                className="bg-white p-4 rounded-lg"
+                dangerouslySetInnerHTML={{ __html: svgContent }}
+              />
             )}
             {viewMode === "flow" && parsedOCIF && (
               <div className="w-full h-[500px]">
                 <ReactFlowView ocifData={parsedOCIF} layout={layout} />
               </div>
+            )}
+            {viewMode === "cola" && parsedOCIF && (
+              <ColaGraphView ocif={parsedOCIF} />
             )}
           </div>
 

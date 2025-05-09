@@ -12,6 +12,7 @@
   "dependencies": {
     "@langchain/core": "^0.3.43",
     "@langchain/google-genai": "^0.2.2",
+    "@types/webcola": "^3.2.0",
     "cytoscape": "^3.31.2",
     "cytoscape-cose-bilkent": "^4.1.0",
     "cytoscape-dagre": "^2.5.0",
@@ -23,6 +24,9 @@
     "openai": "^4.91.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-force-graph": "^1.47.6",
+    "react-force-graph-2d": "^1.27.1",
+    "react-webcola": "^1.0.1",
     "reactflow": "^11.11.4",
     "zod": "^3.24.2",
     "zod-openapi": "^4.2.4"
