@@ -133,13 +133,22 @@ const getForceLayout = (nodes: Node[], edges: Edge[]) => {
   // Simple force-directed layout
   const iterations = 100;
   const k = 100; // Spring constant
-  const repulsion = 1000; // Repulsion constant
+  const repulsion = 6000; // Repulsion constant
+  const damping = 0.5; // Damping factor to stabilize movement
+  const minDistance = 50; // Minimum distance between nodes
 
-  // Initialize positions
-  let positions = nodes.map((node) => ({
+  // Initialize positions in a circle to prevent overlapping initial positions
+  const radius = Math.max(nodes.length * 30, 200);
+  const centerX = 400;
+  const centerY = 300;
+  const angleStep = (2 * Math.PI) / nodes.length;
+
+  let positions = nodes.map((node, index) => ({
     id: node.id,
-    x: Math.random() * 800,
-    y: Math.random() * 600,
+    x: centerX + radius * Math.cos(index * angleStep),
+    y: centerY + radius * Math.sin(index * angleStep),
+    vx: 0,
+    vy: 0,
   }));
 
   for (let i = 0; i < iterations; i++) {
@@ -151,14 +160,13 @@ const getForceLayout = (nodes: Node[], edges: Edge[]) => {
       for (let k = j + 1; k < positions.length; k++) {
         const dx = positions[j].x - positions[k].x;
         const dy = positions[j].y - positions[k].y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 0) {
-          const force = repulsion / (distance * distance);
-          forces[j].x += (dx / distance) * force;
-          forces[j].y += (dy / distance) * force;
-          forces[k].x -= (dx / distance) * force;
-          forces[k].y -= (dy / distance) * force;
-        }
+        const distance = Math.max(Math.sqrt(dx * dx + dy * dy), minDistance);
+        const force = repulsion / (distance * distance);
+
+        forces[j].x += (dx / distance) * force;
+        forces[j].y += (dy / distance) * force;
+        forces[k].x -= (dx / distance) * force;
+        forces[k].y -= (dy / distance) * force;
       }
     }
 
@@ -169,24 +177,32 @@ const getForceLayout = (nodes: Node[], edges: Edge[]) => {
       if (sourceIndex !== -1 && targetIndex !== -1) {
         const dx = positions[sourceIndex].x - positions[targetIndex].x;
         const dy = positions[sourceIndex].y - positions[targetIndex].y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 0) {
-          const force = k * (distance - 100); // Target distance of 100
-          forces[sourceIndex].x -= (dx / distance) * force;
-          forces[sourceIndex].y -= (dy / distance) * force;
-          forces[targetIndex].x += (dx / distance) * force;
-          forces[targetIndex].y += (dy / distance) * force;
-        }
+        const distance = Math.max(Math.sqrt(dx * dx + dy * dy), minDistance);
+        const force = k * Math.log(distance / 100);
+
+        forces[sourceIndex].x -= (dx / distance) * force;
+        forces[sourceIndex].y -= (dy / distance) * force;
+        forces[targetIndex].x += (dx / distance) * force;
+        forces[targetIndex].y += (dy / distance) * force;
       }
     });
 
-    // Update positions
+    // Update positions with velocity and damping
     positions = positions.map((pos, index) => ({
       ...pos,
-      x: pos.x + forces[index].x * 0.1,
-      y: pos.y + forces[index].y * 0.1,
+      vx: (pos.vx + forces[index].x) * damping,
+      vy: (pos.vy + forces[index].y) * damping,
+      x: pos.x + pos.vx,
+      y: pos.y + pos.vy,
     }));
   }
+
+  // Ensure all positions are valid numbers
+  positions = positions.map((pos) => ({
+    ...pos,
+    x: isNaN(pos.x) ? 0 : pos.x,
+    y: isNaN(pos.y) ? 0 : pos.y,
+  }));
 
   return nodes.map((node, index) => ({
     ...node,
