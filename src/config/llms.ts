@@ -36,14 +36,14 @@ export const llmAPIs: APIConfig[] = [
     description: "Google's gemini-2.0-flash model (provide your own API key)",
     isChatCompletionCompatible: false,
   },
-  {
-    name: "Gemini-2.5-experimental",
-    baseUrl:
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent?key=",
-    apiKey: "",
-    model: "gemini-2.5-pro-preview-05-06",
-    description:
-      "Google's gemini-2.5-experimental model (provide your own API key)",
-    isChatCompletionCompatible: false,
-  },
+  // {
+  //   name: "Gemini-2.5-experimental",
+  //   baseUrl:
+  //     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent?key=",
+  //   apiKey: "",
+  //   model: "gemini-2.5-pro-preview-05-06",
+  //   description:
+  //     "Google's gemini-2.5-experimental model (provide your own API key)",
+  //   isChatCompletionCompatible: false,
+  // },
 ];
