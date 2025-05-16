@@ -39,9 +39,9 @@ export const llmAPIs: APIConfig[] = [
   {
     name: "Gemini-2.5-experimental",
     baseUrl:
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-exp-03-25:generateContent?key=",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent?key=",
     apiKey: "",
-    model: "gemini-2.5-pro-exp-03-25",
+    model: "gemini-2.5-pro-preview-05-06",
     description:
       "Google's gemini-2.5-experimental model (provide your own API key)",
     isChatCompletionCompatible: false,
