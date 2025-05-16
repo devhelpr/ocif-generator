@@ -10,7 +10,7 @@ import ReactFlow, {
   useReactFlow,
   ReactFlowProvider,
 } from "reactflow";
-import "reactflow/dist/style.css";
+import "reactflow/dist/base.css";
 import { OCIFJson } from "../../services/svg-ocif-types/ocif";
 import CustomNode from "./CustomNode";
 import { renderMarkdownToSVGText } from "../../services/utils/markdownToSVGText";
@@ -240,10 +240,19 @@ const FlowContent = ({
 
       // Determine node type based on OCIF data
       let type = "default";
+      const styles = {
+        width: size[0],
+        height: size[1],
+        backgroundColor: nodeData?.fillColor || "#f8fafc",
+        borderColor: nodeData?.strokeColor || "#64748b",
+        borderWidth: nodeData?.strokeWidth || 2,
+      };
       if (nodeData?.type === "@ocif/node/oval") {
         type = "ellipse";
       } else if (nodeData?.type === "@ocif/node/diamond") {
         type = "diamond";
+        styles.borderWidth = 0;
+        styles.borderColor = "transparent";
       }
 
       newNodes.push({
@@ -253,11 +262,7 @@ const FlowContent = ({
         data: {
           label: getNodeText(node, ocifData.resources, size[0], size[1]),
           style: {
-            width: size[0],
-            height: size[1],
-            backgroundColor: nodeData?.fillColor || "#f8fafc",
-            borderColor: nodeData?.strokeColor || "#64748b",
-            borderWidth: nodeData?.strokeWidth || 2,
+            ...styles,
           },
         },
         connectable: false,

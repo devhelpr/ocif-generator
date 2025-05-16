@@ -10,7 +10,6 @@ import { generateSVG } from "../../services/svg-service";
 import { OCIFJson, OCIFNode } from "../../services/svg-ocif-types/ocif";
 import { ReactFlowView } from "./ReactFlowView";
 import { LayoutOptions, LayoutType } from "./LayoutOptions";
-import { ColaGraphView } from "./ColaGraphView";
 
 // Define the evaluation result type
 interface EvaluationResult {
@@ -23,7 +22,7 @@ interface EvaluationResult {
 }
 
 // Define view modes
-type ViewMode = "json" | "svg" | "flow" | "cola";
+type ViewMode = "json" | "svg" | "flow";
 
 // Import the schema
 import schemaJson from "../../../schema.json";
@@ -429,7 +428,7 @@ export function OCIFGenerator() {
                   ? "OCIF Diagram"
                   : viewMode === "flow"
                   ? "Flow View"
-                  : "Cola View"}
+                  : ""}
               </h3>
               <div className="flex space-x-2 mb-4">
                 <button
@@ -462,16 +461,6 @@ export function OCIFGenerator() {
                 >
                   Flow
                 </button>
-                <button
-                  onClick={() => handleViewModeChange("cola")}
-                  className={`px-4 py-2 rounded ${
-                    viewMode === "cola"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                >
-                  Cola
-                </button>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -498,7 +487,7 @@ export function OCIFGenerator() {
             )}
             {viewMode === "svg" && svgContent && (
               <div
-                className="bg-white p-4 rounded-lg"
+                className="bg-white p-4 rounded-lg overflow-auto"
                 dangerouslySetInnerHTML={{ __html: svgContent }}
               />
             )}
@@ -506,9 +495,6 @@ export function OCIFGenerator() {
               <div className="w-full h-[500px]">
                 <ReactFlowView ocifData={parsedOCIF} layout={layout} />
               </div>
-            )}
-            {viewMode === "cola" && parsedOCIF && (
-              <ColaGraphView ocif={parsedOCIF} />
             )}
           </div>
 
