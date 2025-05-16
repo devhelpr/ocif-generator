@@ -1,16 +1,20 @@
-export type OCIFNode =  {
+export type OCIFNode = {
   id: string;
   position?: [number, number];
   size?: [number, number];
   resource?: string;
   text?: string;
   data?: Array<{
-    type: '@ocif/node/oval' | '@ocif/node/rectangle' | '@ocif/node/arrow';
+    type:
+      | "@ocif/node/oval"
+      | "@ocif/node/rectangle"
+      | "@ocif/node/diamond"
+      | "@ocif/node/arrow";
     strokeWidth?: number;
     strokeColor?: string;
     fillColor?: string;
   }>;
-}
+};
 
 export type OCIFJson = {
   version: string;
@@ -31,7 +35,7 @@ export type OCIFJson = {
   resources?: Array<{
     id: string;
     representations?: Array<{
-      'mime-type': string;
+      "mime-type": string;
       content?: string;
       location?: string;
     }>;
@@ -49,14 +53,14 @@ export interface ValidationError {
 
 export interface Node {
   id: string;
-  type: 'rectangle' | 'oval';
+  type: "rectangle" | "oval" | "diamond";
   width: number;
   height: number;
   x: number;
   y: number;
   text?: string;
   style: {
-    type: 'rectangle' | 'oval';
+    type: "rectangle" | "oval" | "diamond";
     strokeWidth: number;
     strokeColor: string;
     fillColor: string;
@@ -69,7 +73,7 @@ export interface Relation {
   path: string;
   type: string;
   rel: string;
-} 
+}
 
 export interface Group {
   id: string;
@@ -80,4 +84,3 @@ export interface Group {
   width: number;
   height: number;
 }
-
