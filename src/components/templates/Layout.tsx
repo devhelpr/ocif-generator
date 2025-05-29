@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,9 +11,9 @@ export function Layout({ children }: LayoutProps) {
         <div className="bg-white rounded-3xl shadow-xl shadow-zinc-200/50 backdrop-blur-sm animate-fade-in">
           <div className="px-6 py-8 sm:px-8 sm:py-10">
             <div className="text-center mb-12">
-              <img 
-                src="/ocwg-ocif-logo.png" 
-                alt="OCWG OCIF Logo" 
+              <img
+                src="/ocwg-ocif-logo.png"
+                alt="OCWG OCIF Logo"
                 className="h-16 mx-auto mb-4 rounded-md shadow-sm"
               />
               <h1 className="text-4xl sm:text-5xl font-bold text-black mb-4">
@@ -23,36 +23,36 @@ export function Layout({ children }: LayoutProps) {
                 Generate OCIF JSON files for your projects
               </p>
               <p className="text-sm text-zinc-500 mt-2">
-                Currently supporting OCIF specification v0.4
+                Currently supporting OCIF specification v0.5
               </p>
             </div>
-            
+
             {children}
           </div>
           <div className="mt-8 px-6 py-6 sm:px-8 border-t border-zinc-100">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-zinc-500">
               <span>Learn more about OCIF:</span>
               <div className="flex items-center gap-4">
-                <a 
-                  href="https://canvasprotocol.org" 
-                  target="_blank" 
+                <a
+                  href="https://canvasprotocol.org"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-indigo-600 transition-colors duration-200"
                 >
                   Homepage
                 </a>
                 <span>•</span>
-                <a 
-                  href="https://canvasprotocol.org/spec" 
-                  target="_blank" 
+                <a
+                  href="https://spec.canvasprotocol.org"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-indigo-600 transition-colors duration-200"
                 >
                   Specification
                 </a>
                 <span>•</span>
-                <a 
-                  href="/hello-world.ocif.json" 
+                <a
+                  href="/hello-world.ocif.json"
                   download="hello-world.ocif.json"
                   className="hover:text-indigo-600 transition-colors duration-200"
                 >
@@ -64,5 +64,5 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}

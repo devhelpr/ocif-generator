@@ -1,26 +1,33 @@
 import { z } from "zod";
 
 // Define the node data schema
-const NodeDataSchema = z.object({
-  type: z.string().describe("The type of the node data"),
-  strokeWidth: z.number().optional().describe("The width of the stroke"),
-  strokeColor: z.string().optional().describe("The color of the stroke"),
-  fillColor: z.string().optional().describe("The fill color"),
-  start: z.array(z.number()).optional().describe("The starting point [x, y]"),
-  end: z.array(z.number()).optional().describe("The ending point [x, y]"),
-  startMarker: z.string().optional().describe("The start marker type"),
-  endMarker: z.string().optional().describe("The end marker type"),
-  relation: z.string().optional().describe("The ID of the corresponding relation"),
-}).passthrough(); // Allow additional properties
+const NodeDataSchema = z
+  .object({
+    type: z.string().describe("The type of the node data"),
+    strokeWidth: z.number().optional().describe("The width of the stroke"),
+    strokeColor: z.string().optional().describe("The color of the stroke"),
+    fillColor: z.string().optional().describe("The fill color"),
+    start: z.array(z.number()).optional().describe("The starting point [x, y]"),
+    end: z.array(z.number()).optional().describe("The ending point [x, y]"),
+    startMarker: z.string().optional().describe("The start marker type"),
+    endMarker: z.string().optional().describe("The end marker type"),
+    relation: z
+      .string()
+      .optional()
+      .describe("The ID of the corresponding relation"),
+  })
+  .passthrough(); // Allow additional properties
 
 // Define the relation data schema
-const RelationDataSchema = z.object({
-  type: z.string().describe("The type of the relation data"),
-  start: z.string().optional().describe("The ID of the source node"),
-  end: z.string().optional().describe("The ID of the target node"),
-  rel: z.string().optional().describe("A semantic relationship URI"),
-  node: z.string().optional().describe("The ID of the arrow node"),
-}).passthrough(); // Allow additional properties
+const RelationDataSchema = z
+  .object({
+    type: z.string().describe("The type of the relation data"),
+    start: z.string().optional().describe("The ID of the source node"),
+    end: z.string().optional().describe("The ID of the target node"),
+    rel: z.string().optional().describe("A semantic relationship URI"),
+    node: z.string().optional().describe("The ID of the arrow node"),
+  })
+  .passthrough(); // Allow additional properties
 
 export const OCIFSchemaDefinition = z
   .object({
@@ -39,13 +46,13 @@ export const OCIFSchemaDefinition = z
               .describe("The size of the node per dimension.")
               .optional(),
             resource: z.string().describe("The resource to display").optional(),
-            data: z.array(NodeDataSchema).describe("Extended node data").optional(),
-            rotation: z.number().describe("+/- 360 degrees").optional(),
-            scale: z
-              .array(z.number())
-              .describe("Scale factors to resize nodes")
+            data: z
+              .array(NodeDataSchema)
+              .describe("Extended node data")
               .optional(),
-          }).passthrough()
+            rotation: z.number().describe("+/- 360 degrees").optional(),
+          })
+          .passthrough()
           .describe("A node in the OCIF document")
       )
       .describe("A list of nodes")
@@ -59,7 +66,8 @@ export const OCIFSchemaDefinition = z
               .array(RelationDataSchema)
               .describe("Additional data for the relation.")
               .optional(),
-          }).passthrough()
+          })
+          .passthrough()
           .describe("A relation between nodes")
       )
       .describe("A list of relations")
@@ -100,8 +108,8 @@ export const OCIFSchemaDefinition = z
       )
       .describe("A list of resources")
       .optional(),
-    
-  }).passthrough()
+  })
+  .passthrough()
   .describe(
     "The schema for the Open Component Interconnect Format (OCIF) Core document structure."
   );

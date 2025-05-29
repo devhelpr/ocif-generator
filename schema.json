@@ -71,13 +71,6 @@
         "rotation": {
           "type": "number",
           "description": "+/- 360 degrees"
-        },
-        "scale": {
-          "type": "array",
-          "description": "Scale factors to resize nodes",
-          "items": {
-            "type": "number"
-          }
         }
       },
       "required": ["id"]

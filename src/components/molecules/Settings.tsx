@@ -10,6 +10,7 @@ interface APIConfig {
   name: string;
   baseUrl: string;
   apiKey: string;
+  description: string;
 }
 
 export function Settings({ isOpen, onClose }: SettingsProps) {
@@ -31,7 +32,16 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
           const savedApi = parsed.apis.find(
             (api: APIConfig) => api.name === defaultApi.name
           );
-          return savedApi || defaultApi;
+          return savedApi
+            ? {
+                ...defaultApi,
+                ...savedApi,
+                description: defaultApi.description,
+                systemKey: defaultApi.systemKey,
+                model: defaultApi.model,
+                baseUrl: defaultApi.baseUrl,
+              }
+            : defaultApi;
         });
 
         setApis(mergedApis);
@@ -123,7 +133,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
             >
               {apis.map((api) => (
                 <option key={api.name} value={api.name}>
-                  {api.name}
+                  {api.description}
                 </option>
               ))}
             </select>
