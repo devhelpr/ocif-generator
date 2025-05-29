@@ -145,7 +145,7 @@ export function OCIFGenerator() {
     try {
       // Check if API key is set
       const apiConfig = getCurrentAPIConfig();
-      if (!apiConfig.apiKey) {
+      if (!apiConfig.apiKey && !apiConfig.systemKey) {
         setError(
           `No API key set for ${apiConfig.name}. Please configure it in the Settings.`
         );

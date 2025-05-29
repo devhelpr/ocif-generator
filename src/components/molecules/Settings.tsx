@@ -1,16 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { llmAPIs } from "../../config/llms";
+import { APIConfig } from "../../interfaces/api-config";
 
 interface SettingsProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-interface APIConfig {
-  name: string;
-  baseUrl: string;
-  apiKey: string;
-  description: string;
 }
 
 export function Settings({ isOpen, onClose }: SettingsProps) {
@@ -18,6 +12,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
   const [apiKey, setApiKey] = useState<string>(llmAPIs[0].apiKey);
   const [apis, setApis] = useState<APIConfig[]>(llmAPIs);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [systemKey, setSystemKey] = useState<string>(
+    llmAPIs[0].systemKey ?? ""
+  );
 
   useEffect(() => {
     // Load saved settings from localStorage
@@ -56,9 +53,11 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
             (api) => api.name === parsed.selectedAPI
           );
           setApiKey(selectedApiConfig?.apiKey || "");
+          setSystemKey(selectedApiConfig?.systemKey || "");
         } else {
           setSelectedAPI(mergedApis[0].name);
           setApiKey(mergedApis[0].apiKey || "");
+          setSystemKey(mergedApis[0].systemKey || "");
         }
       } catch (error) {
         console.error("Error parsing saved settings:", error);
@@ -128,6 +127,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   (api) => api.name === e.target.value
                 );
                 setApiKey(selectedApiConfig?.apiKey || "");
+                setSystemKey(selectedApiConfig?.systemKey || "");
               }}
               className="w-full rounded-lg border-zinc-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2.5"
             >
@@ -139,22 +139,24 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
             </select>
           </div>
 
-          <div>
-            <label
-              htmlFor="api-key"
-              className="block text-sm font-medium text-zinc-700 mb-2"
-            >
-              API Key
-            </label>
-            <input
-              id="api-key"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="w-full rounded-lg border-zinc-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2.5"
-              placeholder="Enter your API key"
-            />
-          </div>
+          {!systemKey ? (
+            <div>
+              <label
+                htmlFor="api-key"
+                className="block text-sm font-medium text-zinc-700 mb-2"
+              >
+                API Key
+              </label>
+              <input
+                id="api-key"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full rounded-lg border-zinc-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2.5"
+                placeholder="Enter your API key"
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-8 flex justify-end space-x-4">
