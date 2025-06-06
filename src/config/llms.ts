@@ -15,7 +15,7 @@ export const llmAPIs: APIConfig[] = [
     baseUrl:
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=",
     apiKey: "",
-    model: "ggemini-2.0-flash",
+    model: "gemini-2.0-flash",
     description: "Google's gemini-2.0-flash model via ocif-generator",
     isChatCompletionCompatible: false,
     systemKey: "gemini",
@@ -29,7 +29,7 @@ export const llmAPIs: APIConfig[] = [
     isChatCompletionCompatible: true,
   },
   {
-    name: "Anthropic",
+    name: "Anthropic-v4",
     baseUrl: "https://api.anthropic.com/v1",
     apiKey: "",
     model: "claude-sonnet-4-20250514",

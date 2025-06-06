@@ -10,6 +10,7 @@ import { generateSVG } from "../../services/svg-service";
 import { OCIFJson, OCIFNode } from "../../services/svg-ocif-types/ocif";
 import { ReactFlowView } from "./ReactFlowView";
 import { LayoutOptions, LayoutType } from "./LayoutOptions";
+import OCIFMermaidView from "./OCIFMermaidView";
 
 // Define the evaluation result type
 interface EvaluationResult {
@@ -22,7 +23,7 @@ interface EvaluationResult {
 }
 
 // Define view modes
-type ViewMode = "json" | "svg" | "flow";
+type ViewMode = "json" | "svg" | "flow" | "mermaid";
 
 // Import the schema
 import schemaJson from "../../../schema.json";
@@ -428,6 +429,8 @@ export function OCIFGenerator() {
                   ? "OCIF Diagram"
                   : viewMode === "flow"
                   ? "Flow View"
+                  : viewMode === "mermaid"
+                  ? "Mermaid View"
                   : ""}
               </h3>
               <div className="flex space-x-2 mb-4">
@@ -460,6 +463,16 @@ export function OCIFGenerator() {
                   }`}
                 >
                   Flow
+                </button>
+                <button
+                  onClick={() => handleViewModeChange("mermaid")}
+                  className={`px-4 py-2 rounded ${
+                    viewMode === "mermaid"
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  Mermaid
                 </button>
               </div>
             </div>
@@ -495,6 +508,9 @@ export function OCIFGenerator() {
               <div className="w-full h-[500px]">
                 <ReactFlowView ocifData={parsedOCIF} layout={layout} />
               </div>
+            )}
+            {viewMode === "mermaid" && parsedOCIF && (
+              <OCIFMermaidView ocifData={parsedOCIF} />
             )}
           </div>
 
