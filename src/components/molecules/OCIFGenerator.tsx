@@ -420,8 +420,8 @@ export function OCIFGenerator() {
 
       {(generatedOCIF || svgContent) && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex md:items-center justify-between w-100 overflow-auto md:overflow-visible md:w-auto flex-col md:flex-row px-1 md:px-0">
+            <div className="flex md:items-center space-x-4 flex-col md:flex-row">
               <h3 className="text-lg font-medium text-zinc-900">
                 {viewMode === "json"
                   ? "Generated OCIF"
@@ -433,7 +433,7 @@ export function OCIFGenerator() {
                   ? "Mermaid View"
                   : ""}
               </h3>
-              <div className="flex space-x-2 mb-4">
+              <div className="flex space-x-2 mb-4 md:mb-0">
                 <button
                   onClick={() => handleViewModeChange("json")}
                   className={`px-4 py-2 rounded ${
@@ -476,7 +476,7 @@ export function OCIFGenerator() {
                 </button>
               </div>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2  pb-2 md:pb-0">
               <button
                 onClick={handleCopyToClipboard}
                 className="inline-flex items-center px-3 py-2 border border-zinc-300 shadow-sm text-sm font-medium rounded-md text-zinc-700 bg-white hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
